@@ -54,6 +54,10 @@
 #include "timers.h"
 #include "queue.h"
 
+
+#define CHATTERBOX_TASKS_MAX		3
+
+
 /* TODO: Priorities at which the tasks are created.
  */
 
@@ -82,6 +86,7 @@ typedef struct
 	e_chatterboxTaskPriority priority;
 	unsigned long outputFrequency;
 	char outputData[10];
+	void (*funcptr)(void);
 
 }s_chatterboxTasks;
 
@@ -89,74 +94,51 @@ typedef struct
  * TODO: C function (prototype) for task
  */
 void chatterboxTask1(void);
-
 void chatterboxTask2(void);
-
 void chatterboxTask3(void);
-
-void chatterboxTask(void);
 /*-----------------------------------------------------------*/
 
-/* The queue used by both tasks. */
-static QueueHandle_t xQueue = NULL;
+
 /*
- * TODO: initialize data structures
+ * TODO: initialize data structures - Defined global for now ( could be placed as local)
  */
 s_chatterboxTasks chatterboxTasks[3] =
-{
-											{CHATTERBOX_TASK_PRIORITY_1,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task1"	},
-											{CHATTERBOX_TASK_PRIORITY_1,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task2"	},
-											{CHATTERBOX_TASK_PRIORITY_1,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task3"	},
+{									// Priority						Frequency for calls,				OP String	Function
+									{CHATTERBOX_TASK_PRIORITY_1,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task1",	&chatterboxTask1},
+									{CHATTERBOX_TASK_PRIORITY_2,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task2",	&chatterboxTask2},
+									{CHATTERBOX_TASK_PRIORITY_3,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task3",	&chatterboxTask3},
 };
 
 /*** SEE THE COMMENTS AT THE TOP OF THIS FILE ***/
 void main_exercise( void )
 {
+	uint8_t taskCount = 0;
 
+	for (taskCount = 0; taskCount < CHATTERBOX_TASKS_MAX; taskCount++)
+	{
+		/*
+		 * Create the task instances.
+		 */
+		xTaskCreate(chatterboxTasks[taskCount].funcptr,			/* The function that implements the task. */
+			"Task1", 											/* The text name assigned to the task - for debug only as it is not used by the kernel. */
+			configMINIMAL_STACK_SIZE, 							/* The size of the stack to allocate to the task. */
+			NULL, 												/* The parameter passed to the task - not used in this simple case. */
+			chatterboxTasks[taskCount].priority,				/* The priority assigned to the task. */
+			NULL);												/* The task handle is not required, so NULL is passed. */
 
-	/* 
-	 * TODO: Create the task instances.
-     */	
+	}
 
-	 /* Start the two tasks as described in the comments at the top of this
-	 file. */
-		xTaskCreate(chatterboxTask1,			/* The function that implements the task. */
-			"Task1", 							/* The text name assigned to the task - for debug only as it is not used by the kernel. */
-			configMINIMAL_STACK_SIZE, 		/* The size of the stack to allocate to the task. */
-			NULL, 							/* The parameter passed to the task - not used in this simple case. */
-			CHATTERBOX_TASK_PRIORITY_1,/* The priority assigned to the task. */
-			NULL);							/* The task handle is not required, so NULL is passed. */
-
-
-		xTaskCreate(chatterboxTask2,			/* The function that implements the task. */
-			"Task2", 							/* The text name assigned to the task - for debug only as it is not used by the kernel. */
-			configMINIMAL_STACK_SIZE, 		/* The size of the stack to allocate to the task. */
-			NULL, 							/* The parameter passed to the task - not used in this simple case. */
-			CHATTERBOX_TASK_PRIORITY_2,/* The priority assigned to the task. */
-			NULL);
-
-
-		xTaskCreate(chatterboxTask3,			/* The function that implements the task. */
-			"Task3", 							/* The text name assigned to the task - for debug only as it is not used by the kernel. */
-			configMINIMAL_STACK_SIZE, 		/* The size of the stack to allocate to the task. */
-			NULL, 							/* The parameter passed to the task - not used in this simple case. */
-			CHATTERBOX_TASK_PRIORITY_3,/* The priority assigned to the task. */
-			NULL);
-
-
-	 /*
-	  * TODO: Start the task instances.
-	  */
-
-	  /* Start the tasks and timer running. */
-		vTaskStartScheduler();
+	/*
+	* Start the task instances.
+	*/
+	vTaskStartScheduler();
 
 	/* If all is well, the scheduler will now be running, and the following
 	line will never be reached.  If the following line does execute, then
 	there was insufficient FreeRTOS heap memory available for the idle and/or
 	timer tasks	to be created.  See the memory management section on the
 	FreeRTOS web site for more details. */
-	for( ;; );
+	while(1);
 }
 /*-----------------------------------------------------------*/
 
@@ -166,12 +148,12 @@ void main_exercise( void )
 void chatterboxTask1(void)
 {
 	TickType_t xNextWakeTime;
-	const TickType_t xBlockTime = mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS;
+	const TickType_t xBlockTime = chatterboxTasks[0].outputFrequency;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
-	for (;; )
+	while (1)
 	{
 		/* Place this task in the blocked state until it is time to run again.
 		The block time is specified in ticks, pdMS_TO_TICKS() was used to
@@ -188,12 +170,12 @@ void chatterboxTask1(void)
 void chatterboxTask2(void)
 {
 	TickType_t xNextWakeTime;
-	const TickType_t xBlockTime = mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS;
+	const TickType_t xBlockTime = chatterboxTasks[1].outputFrequency;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
-	for (;; )
+	while (1)
 	{
 		/* Place this task in the blocked state until it is time to run again.
 		The block time is specified in ticks, pdMS_TO_TICKS() was used to
@@ -211,12 +193,12 @@ void chatterboxTask2(void)
 void chatterboxTask3(void)
 {
 	TickType_t xNextWakeTime;
-	const TickType_t xBlockTime = mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS;
+	const TickType_t xBlockTime = chatterboxTasks[2].outputFrequency;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
-	for (;; )
+	while (1)
 	{
 		/* Place this task in the blocked state until it is time to run again.
 		The block time is specified in ticks, pdMS_TO_TICKS() was used to
