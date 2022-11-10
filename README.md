@@ -1,4 +1,4 @@
-# REPO_SEM1_RTCES
+# RTCES
 ## University of Stuttgart
 ### Group 2 Team 15
 This Repository contains following
