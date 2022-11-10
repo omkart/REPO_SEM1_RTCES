@@ -105,9 +105,9 @@ typedef struct
 /*
  * C function (prototype) for task
  */
-void chatterboxTask1(void);
-void chatterboxTask2(void);
-void chatterboxTask3(void);
+void chatterboxTask1(void* taskParameters);
+void chatterboxTask2(void* taskParameters);
+void chatterboxTask3(void* taskParameters);
 /*-----------------------------------------------------------*/
 
 
@@ -157,7 +157,7 @@ void main_exercise( void )
 /* 
  *  C function for tasks
  */
-void chatterboxTask1(void)
+void chatterboxTask1(void* taskParameters)
 {
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = chatterboxTasks[0].outputFrequency;
@@ -173,7 +173,7 @@ void chatterboxTask1(void)
 	}
 }
 
-void chatterboxTask2(void)
+void chatterboxTask2(void* taskParameters)
 {
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = chatterboxTasks[1].outputFrequency;
@@ -188,11 +188,10 @@ void chatterboxTask2(void)
 
 	}
 
-
 }
 
 
-void chatterboxTask3(void)
+void chatterboxTask3(void* taskParameters)
 {
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = chatterboxTasks[2].outputFrequency;
