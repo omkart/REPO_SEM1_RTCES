@@ -58,7 +58,8 @@
 #define CHATTERBOX_TASKS_MAX		3
 
 
-/* TODO: Priorities at which the tasks are created.
+/* 
+	Priorities at which the tasks are created.
  */
 
 typedef enum
@@ -66,11 +67,21 @@ typedef enum
 	CHATTERBOX_TASK_PRIORITY_1 = (tskIDLE_PRIORITY + 1),
 	CHATTERBOX_TASK_PRIORITY_2,
 	CHATTERBOX_TASK_PRIORITY_3,
-	EX_TASK_PRIORITY_UNDEFINED,
-	_TASK_PRIORITY_UNDEFINED,
+	CHATTERBOX_TASK_PRIORITY_UNDEFINED,
 }e_chatterboxTaskPriority;
 
-/* TODO: output frequencey
+/* 
+	Task Execution type
+ */
+
+typedef enum
+{
+	CHATTERBOX_TASK_EXEC_TYPE_1 = 0,		// infinite task instance executions
+	CHATTERBOX_TASK_EXEC_TYPE_2,			//	task instance shall only be executed 5 times
+}e_chatterboxTaskExecType;
+
+/* 
+	output frequencey
  */
 
 #define mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS pdMS_TO_TICKS( 200UL )
@@ -78,7 +89,7 @@ typedef enum
 /*-----------------------------------------------------------*/
 
 /*
-  * TODO: data structure
+  *  data structure
   */
 
 typedef struct
@@ -86,12 +97,13 @@ typedef struct
 	e_chatterboxTaskPriority priority;
 	unsigned long outputFrequency;
 	char outputData[10];
-	void (*funcptr)(void);
+	e_chatterboxTaskExecType execType;
+	void (*taskHandlerFuncptr)(void);
 
 }s_chatterboxTasks;
 
 /*
- * TODO: C function (prototype) for task
+ * C function (prototype) for task
  */
 void chatterboxTask1(void);
 void chatterboxTask2(void);
@@ -100,13 +112,13 @@ void chatterboxTask3(void);
 
 
 /*
- * TODO: initialize data structures - Defined global for now ( could be placed as local)
+ * initialize data structures - Defined global for now ( could be placed as local)
  */
 s_chatterboxTasks chatterboxTasks[3] =
-{									// Priority						Frequency for calls,				OP String	Function
-									{CHATTERBOX_TASK_PRIORITY_1,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task1",	&chatterboxTask1},
-									{CHATTERBOX_TASK_PRIORITY_2,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task2",	&chatterboxTask2},
-									{CHATTERBOX_TASK_PRIORITY_3,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task3",	&chatterboxTask3},
+{									// Priority						Frequency for calls,				OP String	Execution Type				Function
+									{CHATTERBOX_TASK_PRIORITY_1,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task1",	CHATTERBOX_TASK_EXEC_TYPE_1, &chatterboxTask1},
+									{CHATTERBOX_TASK_PRIORITY_2,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task2",	CHATTERBOX_TASK_EXEC_TYPE_1, &chatterboxTask2},
+									{CHATTERBOX_TASK_PRIORITY_3,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task3",	CHATTERBOX_TASK_EXEC_TYPE_2, &chatterboxTask3},
 };
 
 /*** SEE THE COMMENTS AT THE TOP OF THIS FILE ***/
@@ -119,7 +131,7 @@ void main_exercise( void )
 		/*
 		 * Create the task instances.
 		 */
-		xTaskCreate(chatterboxTasks[taskCount].funcptr,			/* The function that implements the task. */
+		xTaskCreate(chatterboxTasks[taskCount].taskHandlerFuncptr,			/* The function that implements the task. */
 			"Task1", 											/* The text name assigned to the task - for debug only as it is not used by the kernel. */
 			configMINIMAL_STACK_SIZE, 							/* The size of the stack to allocate to the task. */
 			NULL, 												/* The parameter passed to the task - not used in this simple case. */
@@ -143,7 +155,7 @@ void main_exercise( void )
 /*-----------------------------------------------------------*/
 
 /* 
- * TODO: C function for tasks
+ *  C function for tasks
  */
 void chatterboxTask1(void)
 {
@@ -155,16 +167,10 @@ void chatterboxTask1(void)
 
 	while (1)
 	{
-		/* Place this task in the blocked state until it is time to run again.
-		The block time is specified in ticks, pdMS_TO_TICKS() was used to
-		convert a time specified in milliseconds into a time specified in ticks.
-		While in the Blocked state this task will not consume any CPU time. */
 		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 		printf("%s\n", chatterboxTasks[0].outputData);
 
 	}
-
-	
 }
 
 void chatterboxTask2(void)
@@ -177,10 +183,6 @@ void chatterboxTask2(void)
 
 	while (1)
 	{
-		/* Place this task in the blocked state until it is time to run again.
-		The block time is specified in ticks, pdMS_TO_TICKS() was used to
-		convert a time specified in milliseconds into a time specified in ticks.
-		While in the Blocked state this task will not consume any CPU time. */
 		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 		printf("%s\n", chatterboxTasks[1].outputData);
 
@@ -194,20 +196,30 @@ void chatterboxTask3(void)
 {
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = chatterboxTasks[2].outputFrequency;
-
+	static uint64_t task3ExecutionCount = 0;
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
+
+
 	while (1)
 	{
-		/* Place this task in the blocked state until it is time to run again.
-		The block time is specified in ticks, pdMS_TO_TICKS() was used to
-		convert a time specified in milliseconds into a time specified in ticks.
-		While in the Blocked state this task will not consume any CPU time. */
 		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 		printf("%s\n", chatterboxTasks[2].outputData);
 
+		if (chatterboxTasks[2].execType == CHATTERBOX_TASK_EXEC_TYPE_2)
+		{
+			task3ExecutionCount++;
+			if (task3ExecutionCount >= 5)
+			{
+				printf("Terminating Task 3\n");
+				vTaskDelete(NULL); //Will delete the existing task
+			}
+		}
+		else
+		{
+			//Do nothing
+		}
+
 	}
-
-
 }
