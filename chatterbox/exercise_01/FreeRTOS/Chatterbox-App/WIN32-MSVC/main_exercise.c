@@ -51,9 +51,10 @@
 /* Kernel includes. */
 #include "FreeRTOS.h"
 #include "task.h"
-#include "timers.h"
-#include "queue.h"
 
+
+
+//TaskHandle_t taskHandle
 
 #define CHATTERBOX_TASKS_MAX		3
 
@@ -98,7 +99,8 @@ typedef struct
 	unsigned long outputFrequency;
 	char outputData[10];
 	e_chatterboxTaskExecType execType;
-	void (*taskHandlerFuncptr)(void);
+	void (*funcPtr)(void);
+	TaskHandle_t taskHandle;
 
 }s_chatterboxTasks;
 
@@ -110,15 +112,16 @@ void chatterboxTask2(void* taskParameters);
 void chatterboxTask3(void* taskParameters);
 /*-----------------------------------------------------------*/
 
+void handleTaskTermination(uint64_t* counter, s_chatterboxTasks* tasks, uint8_t taskNb);
 
 /*
  * initialize data structures - Defined global for now ( could be placed as local)
  */
 s_chatterboxTasks chatterboxTasks[3] =
-{									// Priority						Frequency for calls,				OP String	Execution Type				Function
-									{CHATTERBOX_TASK_PRIORITY_1,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task1",	CHATTERBOX_TASK_EXEC_TYPE_1, &chatterboxTask1},
-									{CHATTERBOX_TASK_PRIORITY_2,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task2",	CHATTERBOX_TASK_EXEC_TYPE_1, &chatterboxTask2},
-									{CHATTERBOX_TASK_PRIORITY_3,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task3",	CHATTERBOX_TASK_EXEC_TYPE_2, &chatterboxTask3},
+{									// Priority						Frequency for calls,				OP String	Execution Type				Function			Task handle
+									{CHATTERBOX_TASK_PRIORITY_1,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task1",	CHATTERBOX_TASK_EXEC_TYPE_1, &chatterboxTask1,	NULL},
+									{CHATTERBOX_TASK_PRIORITY_2,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task2",	CHATTERBOX_TASK_EXEC_TYPE_1, &chatterboxTask2,	NULL},
+									{CHATTERBOX_TASK_PRIORITY_3,mainTASK_CHATTERBOX_OUTPUT_FREQUENCY_MS,"Task3",	CHATTERBOX_TASK_EXEC_TYPE_2, &chatterboxTask3,	NULL},
 };
 
 /*** SEE THE COMMENTS AT THE TOP OF THIS FILE ***/
@@ -131,7 +134,7 @@ void main_exercise( void )
 		/*
 		 * Create the task instances.
 		 */
-		xTaskCreate(chatterboxTasks[taskCount].taskHandlerFuncptr,			/* The function that implements the task. */
+		xTaskCreate(chatterboxTasks[taskCount].funcPtr,			/* The function that implements the task. */
 			"Task1", 											/* The text name assigned to the task - for debug only as it is not used by the kernel. */
 			configMINIMAL_STACK_SIZE, 							/* The size of the stack to allocate to the task. */
 			NULL, 												/* The parameter passed to the task - not used in this simple case. */
@@ -144,6 +147,7 @@ void main_exercise( void )
 	* Start the task instances.
 	*/
 	vTaskStartScheduler();
+
 
 	/* If all is well, the scheduler will now be running, and the following
 	line will never be reached.  If the following line does execute, then
@@ -161,14 +165,19 @@ void chatterboxTask1(void* taskParameters)
 {
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = chatterboxTasks[0].outputFrequency;
+	static uint64_t task1ExecutionCount = 0;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
 	while (1)
 	{
+		/*Delay the task until the block time*/
 		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 		printf("%s\n", chatterboxTasks[0].outputData);
+
+		/*could be hanlded from outside in main loop using the Task handler*/
+		handleTaskTermination(&task1ExecutionCount, &chatterboxTasks[0],0);
 
 	}
 }
@@ -177,15 +186,19 @@ void chatterboxTask2(void* taskParameters)
 {
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = chatterboxTasks[1].outputFrequency;
+	static uint64_t task2ExecutionCount = 0;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
 	while (1)
 	{
+		/*Delay the task until the block time*/
 		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 		printf("%s\n", chatterboxTasks[1].outputData);
 
+		/*could be hanlded from outside in main loop using the Task handler*/
+		handleTaskTermination(&task2ExecutionCount, &chatterboxTasks[0], 1);
 	}
 
 }
@@ -196,29 +209,46 @@ void chatterboxTask3(void* taskParameters)
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = chatterboxTasks[2].outputFrequency;
 	static uint64_t task3ExecutionCount = 0;
+
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
-
-
 	while (1)
 	{
+		/*Delay the task until the block time*/
 		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 		printf("%s\n", chatterboxTasks[2].outputData);
 
-		if (chatterboxTasks[2].execType == CHATTERBOX_TASK_EXEC_TYPE_2)
-		{
-			task3ExecutionCount++;
-			if (task3ExecutionCount >= 5)
-			{
-				printf("Terminating Task 3\n");
-				vTaskDelete(NULL); //Will delete the existing task
-			}
-		}
-		else
-		{
-			//Do nothing
-		}
+		/*could be hanlded from outside in main loop using the Task handler*/
+		handleTaskTermination(&task3ExecutionCount, &chatterboxTasks[0], 2);
 
+	}
+}
+
+void handleTaskTermination(uint64_t* counter, s_chatterboxTasks* tasks, uint8_t taskNb)
+{
+	/*Adding switch to have scalibility for further types of executions as switch case is faster than using if-else*/
+	switch (tasks[taskNb].execType)
+	{
+		case CHATTERBOX_TASK_EXEC_TYPE_1:
+				/*Execute indefinitely so do nothing*/
+			break;
+		case CHATTERBOX_TASK_EXEC_TYPE_2:
+				*counter = *counter + 1;
+				if (*counter >= 5)
+				{
+					printf("Terminating ");
+					printf("%s\n", tasks[taskNb].outputData);
+					vTaskDelete(NULL); //Will delete the existing task
+				}
+				else
+				{
+					//Do nothing
+				}
+			break;
+
+		default:
+			break;
+		
 	}
 }
