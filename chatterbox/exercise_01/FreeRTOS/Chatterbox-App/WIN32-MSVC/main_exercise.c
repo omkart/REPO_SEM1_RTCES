@@ -229,6 +229,3 @@ void chatterboxTask3(void)
 
 
 }
-
-
-void chatterboxTask(void)
