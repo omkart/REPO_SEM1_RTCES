@@ -52,7 +52,7 @@
 #include "semphr.h"
 
 
-#define FBS_MAX_TASKS_IN_FRAME			4
+#define FBS_MAX_TASKS_IN_FRAME			20
 #define FBS_MAX_FRAMES					5
 #define FBS_MAX_TASKS_WORKER			6
 
@@ -87,6 +87,7 @@ typedef struct
 	e_fbsTaskPriority fbsTaskPriority;
 	TaskHandle_t taskHandle;
 	void (*funcPtr)(void);
+	uint8_t* linkToFrameNb;
 }s_fbsTasks;
 
 
@@ -94,7 +95,9 @@ typedef struct
 {
 	uint8_t frameStart;
 	uint8_t frameEnd;
+	uint8_t nbTasksInFrame;
 	uint8_t tasksInFrame[FBS_MAX_TASKS_IN_FRAME];
+
 
 }s_fbsTaskLookupTable;
 
@@ -107,16 +110,19 @@ void fbsWorkerTask3(void* taskParameters);
 void fbsWorkerTask4(void* taskParameters);
 void fbsWorkerTask5(void* taskParameters);
 
-/*WIP : update the table as per the question at the moment kept this table for testing the scheduler task*/
+/*
+Table can also be initialised through initLookupTable for future use wherein that could become and API exposed for the 
+algo that generates the scheduling details of the frames
+Keeping hardcoded as of now for simplicity
+*/
 s_fbsTaskLookupTable fbsTaskLookupTable[FBS_MAX_FRAMES] =
 {
-	//frameStart				//frameEnd			//tasksInFrame
-	{0U,						120U,				{0,1,2,3}			},
-	{120U,						240U,				{4,5,0,1}			},
-	{240U,						360U,				{0,1,2,3}			},
-	{360U,						480U,				{4,5,0,1}			},
-	{480U,						600U,				{0,1,2,3}			},
-
+	//frameStart				//frameEnd		//nbTasksInFrame			//tasksInFrame
+	{0U,						120U,			5,							{0,1,2,3}		},
+	{120U,						240U,			0,							{0}				},
+	{240U,						360U,			3,							{0,1,4}			},
+	{360U,						480U,			2,							{2,3}			},
+	{480U,						600U,			3,							{0,1,4}			},
 };
 
 
@@ -163,16 +169,47 @@ void main_exercise( void )
 		xTaskCreate(workerTasks[taskCount].funcPtr,			/* The function that implements the task. */
 			"WorkerTasks", 											/* The text name assigned to the task - for debug only as it is not used by the kernel. */
 			configMINIMAL_STACK_SIZE, 							/* The size of the stack to allocate to the task. */
-			&workerTasks[taskCount].taskType, 												/* The parameter passed to the task - not used in this simple case. */
+			NULL, 												/* The parameter passed to the task - not used in this simple case. */
 			workerTasks[taskCount].fbsTaskPriority,				/* The priority assigned to the task. */
-			workerTasks[taskCount].taskHandle);												/* The task handle is not required, so NULL is passed. */
+			&workerTasks[taskCount].taskHandle);												/* The task handle is not required, so NULL is passed. */
+
+		/*Find the frame number for worker task*/
+		uint8_t frameNbFound[100] = {0};
+		uint8_t frameNb, taskNbItr,i = 0;
+		for (frameNb = 0;frameNb < FBS_MAX_FRAMES; frameNb++)
+		{
+			for (taskNbItr = 0;taskNbItr < fbsTaskLookupTable[frameNb].nbTasksInFrame;taskNbItr++)
+			{
+				/*
+					This check suggests the worker task is to be executed in this particular frame
+					If thats the case then we just capture that frame number and store it
+				*/
+				if (fbsTaskLookupTable[frameNb].tasksInFrame[taskNbItr] == taskCount)
+				{
+					frameNbFound[i] = frameNb;
+					i++;
+				}
+			}
+			
+		}
+
+		/*Once all the frame numbers are found for the current worker task, we will create and array of the frames
+		where this worker task needs to be executed*/
+		workerTasks[taskCount].linkToFrameNb = malloc(i*sizeof(uint8_t))
+
+
+
 
 	}
+
+
+
 
 	/*
 	* Start the task instances.
 	*/
 	vTaskStartScheduler();
+
     /*
      * TODO
      */
@@ -197,44 +234,25 @@ void fbsSchedulerTask(void* taskParameters)
 	printf("Scheduling Frame %d \n", frameCountNb);
 
 
+
 	while (1)
 	{
 		 
-		uint8_t workerTaskIterator = 0;
-		uint8_t workerTaskToScheduleIterator = 0;
-		for (workerTaskIterator = 0;workerTaskIterator < FBS_MAX_TASKS_WORKER;workerTaskIterator++)
-		{
-			workerTaskToScheduleIterator = 0;
-			for (workerTaskToScheduleIterator = 0;workerTaskToScheduleIterator <= FBS_MAX_TASKS_IN_FRAME;workerTaskToScheduleIterator++)
-			{
-				if (fbsTaskLookupTable->tasksInFrame[workerTaskToScheduleIterator] == workerTaskIterator)
-				{
-					/*This worker task should be scheduled in this frame*/
-					if (eTaskGetState(workerTasks[workerTaskIterator].taskHandle) != eReady &&
-						eTaskGetState(workerTasks[workerTaskIterator].taskHandle) != eRunning)
-					{
-						//vTaskResume(workerTasks[workerTaskIterator].taskHandle);
-					}
-				
-				}
-				else
-				{
-					/*This worker task should not be scheduled in this frame*/
-					vTaskSuspend(workerTasks[workerTaskIterator].taskHandle);
-					printf("Suspended Worker Task Nb : %d", workerTaskIterator);
-				}
-			}
-			
-		}
+		printf("%d", fbsTaskLookupTable[0].tasksInFrame[7]);
 
-
+		
+		vTaskSuspend(workerTasks[0].taskHandle);
+		vTaskSuspend(workerTasks[1].taskHandle);
+		vTaskSuspend(workerTasks[2].taskHandle);
+		vTaskSuspend(workerTasks[3].taskHandle);
+		vTaskSuspend(workerTasks[4].taskHandle);
+		vTaskSuspend(workerTasks[5].taskHandle);
 
 		/*Delay the task until the block time*/
 		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 		
 		/*Checking the Frame Execution*/
 		printf("Checking Frame %d \n", frameCountNb);
-		vTaskResume(workerTasks[0].taskHandle);
 
 		/*Handle Roll over*/
 		frameCountNb++;
