@@ -1,0 +1,50 @@
+﻿cl : command line  warning D9035: option 'Gm' has been deprecated and will be removed in a future release
+  main_exercise.c
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(116,14): warning C4305: 'initializing': truncation from 'unsigned int' to 'uint8_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(117,3): warning C4305: 'initializing': truncation from 'unsigned int' to 'uint8_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(117,14): warning C4305: 'initializing': truncation from 'unsigned int' to 'uint8_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(118,3): warning C4305: 'initializing': truncation from 'unsigned int' to 'uint8_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(118,14): warning C4305: 'initializing': truncation from 'unsigned int' to 'uint8_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(132,43): warning C4113: 'void (__cdecl *)(void *)' differs in parameter lists from 'void (__cdecl *)(void)'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(137,35): warning C4113: 'void (__cdecl *)(void)' differs in parameter lists from 'TaskFunction_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(142,27): warning C4047: 'function': 'TaskHandle_t *const ' differs in levels of indirection from 'TaskHandle_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(142,16): warning C4024: 'xTaskCreate': different types for formal and actual parameter 6
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(146,42): warning C4113: 'void (__cdecl *)(void *)' differs in parameter lists from 'void (__cdecl *)(void)'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(147,42): warning C4113: 'void (__cdecl *)(void *)' differs in parameter lists from 'void (__cdecl *)(void)'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(148,42): warning C4113: 'void (__cdecl *)(void *)' differs in parameter lists from 'void (__cdecl *)(void)'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(149,42): warning C4113: 'void (__cdecl *)(void *)' differs in parameter lists from 'void (__cdecl *)(void)'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(150,42): warning C4113: 'void (__cdecl *)(void *)' differs in parameter lists from 'void (__cdecl *)(void)'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(151,42): warning C4113: 'void (__cdecl *)(void *)' differs in parameter lists from 'void (__cdecl *)(void)'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(163,45): warning C4113: 'void (__cdecl *)(void)' differs in parameter lists from 'TaskFunction_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(168,37): warning C4047: 'function': 'TaskHandle_t *const ' differs in levels of indirection from 'TaskHandle_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(168,26): warning C4024: 'xTaskCreate': different types for formal and actual parameter 6
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(195,22): warning C4431: missing type specifier - int assumed. Note: C no longer supports default-int
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(188,29): warning C4100: 'taskParameters': unreferenced formal parameter
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(257,10): warning C4477: 'printf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'uint64_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(257,10): message : consider using '%lld' in the format string
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(257,10): message : consider using '%I64d' in the format string
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(249,27): warning C4100: 'taskParameters': unreferenced formal parameter
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(271,10): warning C4477: 'printf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'uint64_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(271,10): message : consider using '%lld' in the format string
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(271,10): message : consider using '%I64d' in the format string
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(263,27): warning C4100: 'taskParameters': unreferenced formal parameter
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(286,10): warning C4477: 'printf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'uint64_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(286,10): message : consider using '%lld' in the format string
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(286,10): message : consider using '%I64d' in the format string
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(278,27): warning C4100: 'taskParameters': unreferenced formal parameter
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(299,10): warning C4477: 'printf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'uint64_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(299,10): message : consider using '%lld' in the format string
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(299,10): message : consider using '%I64d' in the format string
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(291,27): warning C4100: 'taskParameters': unreferenced formal parameter
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(312,10): warning C4477: 'printf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'uint64_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(312,10): message : consider using '%lld' in the format string
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(312,10): message : consider using '%I64d' in the format string
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(304,27): warning C4100: 'taskParameters': unreferenced formal parameter
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(325,10): warning C4477: 'printf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'uint64_t'
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(325,10): message : consider using '%lld' in the format string
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(325,10): message : consider using '%I64d' in the format string
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(317,27): warning C4100: 'taskParameters': unreferenced formal parameter
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(163): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(155): message : index '' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\main_exercise.c(163): message : feeds call on this line
+  WIN32.vcxproj -> E:\UNI STUTTGART\REPOS\exercise_02\FreeRTOS\FBS-App\WIN32-MSVC\Debug\FBS-App.exe
