@@ -246,12 +246,15 @@ void fbsSchedulerTask(void* taskParameters)
 	xNextWakeTime = xTaskGetTickCount();
 	static frameCountNb = 0;
 
-	printf("Scheduling Frame %d \n", frameCountNb);
+	
 
 
 
 	while (1)
 	{
+
+		printf("Scheduling Frame %d \n", frameCountNb);
+
 		uint8_t iterator = 0;
 		bool breakCondition = 0;
 
@@ -260,7 +263,7 @@ void fbsSchedulerTask(void* taskParameters)
 		for (taskCount = 0; taskCount < FBS_MAX_TASKS_WORKER; taskCount++)
 		{
 
-
+			breakCondition = false;
 			for (iterator = 0; (iterator < FBS_MAX_FRAMES) && (breakCondition == false);iterator++)
 			{
 				if (workerTasks[taskCount].framesToExecTasks[iterator] == frameCountNb)
@@ -300,7 +303,7 @@ void fbsSchedulerTask(void* taskParameters)
 		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 		
 		/*Checking the Frame Execution*/
-		printf("Checking Frame %d \n", frameCountNb);
+		printf("Checking Frame %d \n\n\n", frameCountNb);
 
 		/*Handle Roll over*/
 		frameCountNb++;
