@@ -44,6 +44,8 @@
 /* Standard includes. */
 #include <stdio.h>
 #include <conio.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 /* Kernel includes. */
 #include "FreeRTOS.h"
@@ -87,7 +89,7 @@ typedef struct
 	e_fbsTaskPriority fbsTaskPriority;
 	TaskHandle_t taskHandle;
 	void (*funcPtr)(void);
-	uint8_t* linkToFrameNb;
+	uint8_t* framesToExecTasks;
 }s_fbsTasks;
 
 
@@ -174,7 +176,7 @@ void main_exercise( void )
 			&workerTasks[taskCount].taskHandle);												/* The task handle is not required, so NULL is passed. */
 
 		/*Find the frame number for worker task*/
-		uint8_t frameNbFound[100] = {0};
+		uint8_t frameNbFound[FBS_MAX_FRAMES] = {0};
 		uint8_t frameNb, taskNbItr,i = 0;
 		for (frameNb = 0;frameNb < FBS_MAX_FRAMES; frameNb++)
 		{
@@ -189,21 +191,34 @@ void main_exercise( void )
 					frameNbFound[i] = frameNb;
 					i++;
 				}
+
+				/*
+				* Using this method, in case task is executed multiple times in the same frame will not be handled
+				* That needs to be handled explicitly through the handler of that task itself
+				*/
+
+				
 			}
 			
 		}
 
-		/*Once all the frame numbers are found for the current worker task, we will create and array of the frames
+		/*Once all the frame numbers are found for the current worker task, we will create an array of the frames
 		where this worker task needs to be executed*/
-		workerTasks[taskCount].linkToFrameNb = malloc(i*sizeof(uint8_t))
+		/*First set all the array elements with a NULL and then copy the required data at appropriate locations*/
+		workerTasks[taskCount].framesToExecTasks = malloc(FBS_MAX_FRAMES * sizeof(uint8_t));
 
-
-
-
+		/*0xFF used as an invalid data*/
+		memset(workerTasks[taskCount].framesToExecTasks, 0xFF, FBS_MAX_FRAMES * sizeof(uint8_t));
+		memcpy(workerTasks[taskCount].framesToExecTasks, frameNbFound, (i * sizeof(uint8_t)));
 	}
 
-
-
+	 
+	uint8_t id = 0;
+	for (id = 0;id < FBS_MAX_FRAMES; id++)
+	{
+		printf("Frame numbers attached : %d\n", workerTasks[0].framesToExecTasks[id]);
+	}
+	
 
 	/*
 	* Start the task instances.
@@ -237,8 +252,41 @@ void fbsSchedulerTask(void* taskParameters)
 
 	while (1)
 	{
-		 
-		printf("%d", fbsTaskLookupTable[0].tasksInFrame[7]);
+		uint8_t iterator = 0;
+		bool breakCondition = 0;
+
+		uint8_t taskCount = 0;
+
+		for (taskCount = 0; taskCount < FBS_MAX_TASKS_WORKER; taskCount++)
+		{
+
+
+			for (iterator = 0; (iterator < FBS_MAX_FRAMES) && (breakCondition == false);iterator++)
+			{
+				if (workerTasks[taskCount].framesToExecTasks[iterator] == frameCountNb)
+				{
+					/*We have found that this worker task should be executed in the current frame number
+					So we will schedule it*/
+					breakCondition = true;
+				}
+				else
+				{
+					/*do nothing*/
+				}
+			}
+
+			if (breakCondition == true)
+			{
+				/*We schedule this task*/
+				printf("Schedule worker task %d\n", taskCount);
+			}
+			else
+			{
+				/*We will not schedule this task*/
+				printf("Stop worker task %d\n", taskCount);
+			}
+		}
+
 
 		
 		vTaskSuspend(workerTasks[0].taskHandle);
