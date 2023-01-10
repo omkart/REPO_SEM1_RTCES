@@ -26,6 +26,8 @@
 #define IPC_SENSOR_FREQ_MS_SENSOR_2A pdMS_TO_TICKS( 500UL )			// 500ms
 #define IPC_SENSOR_FREQ_MS_SENSOR_2B pdMS_TO_TICKS( 1400UL )		// 1400ms
 
+#define IPC_CONTROLLER_FREQ_MS pdMS_TO_TICKS( 50UL )		// 1500ms used only for testing purposes
+
 
 /*Min and max count up done by every sensor*/
 #define IPC_SENSOR_1_MIN_COUNT		100U
@@ -37,7 +39,9 @@
 #define IPC_SENSOR_2B_MIN_COUNT		250U
 #define IPC_SENSOR_2B_MAX_COUNT		299U
 
-
+/*Queue Size for Sensors*/
+#define QUEUE_SENSORS_LENGTH				30U
+#define QUEUE_SENSORS_ITEM_SIZE				sizeof( uint16_t ) 
 
 /*
 	Priorities at which the tasks are created.
@@ -77,6 +81,7 @@ typedef struct
 	unsigned long outputFrequency;
 	void (*funcPtr)(void);
 	TaskHandle_t taskHandle;
+	QueueHandle_t queueHandle;
 }s_ipcTasks;
 
 
@@ -94,6 +99,7 @@ void ipcSensorTask2b(void* taskParameters);
 /*IPC Tasks*/
 static s_ipcTasks ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_MAX];	//Improvement : could be clubbed into single array and accessed through single enum type as index
 static s_ipcTasks ipcSensorTasks[IPC_TASK_TYPE_SENSOR_MAX];
+static QueueSetHandle_t xQueueSet1, xQueueSet2;
 
 void main_exercise( void )
 {
@@ -152,9 +158,25 @@ void main_exercise( void )
 			configMINIMAL_STACK_SIZE, 									/* The size of the stack to allocate to the task. */
 			NULL, 														/* The parameter passed to the task - not used in this simple case. */
 			ipcSensorTasks[taskCount].priority,							/* The priority assigned to the task. */
-			&ipcSensorTasks[taskCount].taskHandle);												
+			&ipcSensorTasks[taskCount].taskHandle);
+
+		ipcSensorTasks[taskCount].queueHandle = xQueueCreate(QUEUE_SENSORS_LENGTH, QUEUE_SENSORS_ITEM_SIZE);
+
+		/*check if queue was created*/
+		configASSERT(ipcSensorTasks[taskCount].queueHandle);
 
 	}
+
+	
+	/*Create queue sets on which the Controller tasks will keep a check*/
+	//Sensor 1 data is of set 1
+	xQueueSet1 = xQueueCreateSet(QUEUE_SENSORS_LENGTH);
+	xQueueAddToSet(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].queueHandle, xQueueSet1);
+
+	//Sensor 2A and 2B data is added to another set
+	xQueueSet2 = xQueueCreateSet(2*QUEUE_SENSORS_LENGTH);
+	xQueueAddToSet(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2A].queueHandle, xQueueSet2);
+	xQueueAddToSet(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2B].queueHandle, xQueueSet2);
 
 
 	/*
@@ -186,17 +208,18 @@ void ipcSensorTask1(void* taskParameters)
 	xNextWakeTime = xTaskGetTickCount();
 	while (1)
 	{
-		/*Delay the task until the block time*/
-		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
-
-
 		counterSensor1++;
 		printf("Sensor 1 counted : %d\n", counterSensor1);
+		xQueueSend(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].queueHandle, (void*)&counterSensor1, (TickType_t)10);
+
 		if (counterSensor1 >= IPC_SENSOR_1_MAX_COUNT)
 		{
 			//Handle roll over
 			counterSensor1 = IPC_SENSOR_1_MIN_COUNT - 1;
 		}
+
+		/*Delay the task until the block time*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 
 	}
 
@@ -212,16 +235,19 @@ void ipcSensorTask2a(void* taskParameters)
 	xNextWakeTime = xTaskGetTickCount();
 	while (1)
 	{
-		/*Delay the task until the block time*/
-		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 
 		counterSensor2a++;
 		printf("Sensor 2A counted : %d\n", counterSensor2a);
+		xQueueSend(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2A].queueHandle, (void*)&counterSensor2a, (TickType_t)10);
+
 		if (counterSensor2a >= IPC_SENSOR_2A_MAX_COUNT)
 		{
 			//Handle roll over
 			counterSensor2a = IPC_SENSOR_2A_MIN_COUNT - 1;
 		}
+
+		/*Delay the task until the block time*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 	}
 
 }
@@ -236,16 +262,20 @@ void ipcSensorTask2b(void* taskParameters)
 	xNextWakeTime = xTaskGetTickCount();
 	while (1)
 	{
-		/*Delay the task until the block time*/
-		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
+		
 
 		counterSensor2b++;
 		printf("Sensor 2B counted : %d\n", counterSensor2b);
+		xQueueSend(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2B].queueHandle, (void*)&counterSensor2b, (TickType_t)10);
+
 		if (counterSensor2b >= IPC_SENSOR_2B_MAX_COUNT)
 		{
 			//Handle roll over
 			counterSensor2b = IPC_SENSOR_2B_MIN_COUNT - 1;
 		}
+
+		/*Delay the task until the block time*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 	}
 
 }
@@ -255,13 +285,55 @@ void ipcSensorTask2b(void* taskParameters)
 void ipcControllerTaskMain(void* taskParameters)
 {
 	TickType_t xNextWakeTime;
+	const TickType_t xBlockTime = IPC_CONTROLLER_FREQ_MS;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
+
+	uint16_t dataFromQueueSensor1 = 0;
+	uint16_t dataFromQueueSensor2A = 0;
+	uint16_t dataFromQueueSensor2B = 0;
+
+	QueueSetMemberHandle_t xActivatedMember1, xActivatedMember2;
 	while (1)
 	{
+		/*Delay the task until the block time
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 
 
+		if (xQueueReceive(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].queueHandle,&(dataFromQueueSensor1),(TickType_t)10) == pdPASS)
+		{
+			printf("Controller 1 received data from Sensor 1: %d\n", dataFromQueueSensor1);
+		}
+		*/
+
+		/* Block to wait for something to be available from the queues that have been added to the set.  Don't block longer than 1500ms. */
+		xActivatedMember2 = xQueueSelectFromSet(xQueueSet2, pdMS_TO_TICKS(1500UL));
+
+		/*Once we reach here means there was a data available from either of the sensors 2A or 2B*/
+		printf("Controller 1 received data at %d; ", xTaskGetTickCount()/ portTICK_PERIOD_MS);
+
+		/*Lets first get the data from Sensor 1*/
+		xQueueReceive(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].queueHandle, &dataFromQueueSensor1, 0);
+		printf("Sensor 1: %d;\t", dataFromQueueSensor1);
+
+		if (xActivatedMember2 == ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2A].queueHandle)
+		{
+			xQueueReceive(xActivatedMember2, &dataFromQueueSensor2A, 0);
+			printf("Sensor 2A: %d;\n", dataFromQueueSensor2A);
+		}
+		else if (xActivatedMember2 == ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2B].queueHandle)
+		{
+			xQueueReceive(xActivatedMember2, &dataFromQueueSensor2B, 0);
+			printf("Sensor 2B: %d;\n", dataFromQueueSensor2B);
+		}
+		else
+		{
+			printf("Timed out without any data\n");
+		}
+
+		
+		
 	}
 
 }
@@ -269,6 +341,7 @@ void ipcControllerTaskMain(void* taskParameters)
 void ipcControllerTaskSecondary(void* taskParameters)
 {
 	TickType_t xNextWakeTime;
+	const TickType_t xBlockTime = IPC_CONTROLLER_FREQ_MS;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
