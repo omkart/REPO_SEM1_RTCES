@@ -92,7 +92,7 @@ void ipcSensorTask2b(void* taskParameters);
 
 
 /*IPC Tasks*/
-static s_ipcTasks ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_MAX];
+static s_ipcTasks ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_MAX];	//Improvement : could be clubbed into single array and accessed through single enum type as index
 static s_ipcTasks ipcSensorTasks[IPC_TASK_TYPE_SENSOR_MAX];
 
 void main_exercise( void )
@@ -109,17 +109,52 @@ void main_exercise( void )
 	/*Sensor Tasks*/
 	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].funcPtr = &ipcSensorTask1;
 	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].outputFrequency = IPC_SENSOR_FREQ_MS_SENSOR_1;
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].priority = IPC_TASK_PRIORITY_3;				// todo: decide the final priority, keep 3 for now
 
-	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].funcPtr = &ipcSensorTask2a;
-	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].outputFrequency = IPC_SENSOR_FREQ_MS_SENSOR_2A;
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2A].funcPtr = &ipcSensorTask2a;
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2A].outputFrequency = IPC_SENSOR_FREQ_MS_SENSOR_2A;
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2A].priority = IPC_TASK_PRIORITY_3;				// todo: decide the final priority, keep 3 for now
 
-	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].funcPtr = &ipcSensorTask2b;
-	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].outputFrequency = IPC_SENSOR_FREQ_MS_SENSOR_2B;
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2B].funcPtr = &ipcSensorTask2b;
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2B].outputFrequency = IPC_SENSOR_FREQ_MS_SENSOR_2B;
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2B].priority = IPC_TASK_PRIORITY_3;				// todo: decide the final priority, keep 3 for now
 
 
+	/*Create Controller tasks*/
+	uint8_t taskCount = 0;
+	uint8_t taskCountMax = (IPC_TASK_TYPE_CONTROLLER_MAX);
 
+	for (taskCount = 0; taskCount < taskCountMax; taskCount++)
+	{
+		/*
+		 * Create the task instances.
+		 */
+		xTaskCreate(ipcControllerTasks[taskCount].funcPtr,				/* The function that implements the task. */
+			"ControllerTasks", 											/* The text name assigned to the task - for debug only as it is not used by the kernel. */
+			configMINIMAL_STACK_SIZE, 									/* The size of the stack to allocate to the task. */
+			NULL, 														/* The parameter passed to the task - not used in this simple case. */
+			ipcControllerTasks[taskCount].priority,						/* The priority assigned to the task. */
+			&ipcControllerTasks[taskCount].taskHandle);						
 
-	/* TODO */
+	}
+
+	/*Create Sensor tasks*/
+	uint8_t taskCount = 0;
+	uint8_t taskCountMax = (IPC_TASK_TYPE_SENSOR_MAX);
+
+	for (taskCount = 0; taskCount < taskCountMax; taskCount++)
+	{
+		/*
+		 * Create the task instances.
+		 */
+		xTaskCreate(ipcSensorTasks[taskCount].funcPtr,					/* The function that implements the task. */
+			"Sensor Tasks", 											/* The text name assigned to the task - for debug only as it is not used by the kernel. */
+			configMINIMAL_STACK_SIZE, 									/* The size of the stack to allocate to the task. */
+			NULL, 														/* The parameter passed to the task - not used in this simple case. */
+			ipcSensorTasks[taskCount].priority,							/* The priority assigned to the task. */
+			&ipcSensorTasks[taskCount].taskHandle);												
+
+	}
 }
 /*-----------------------------------------------------------*/
 
