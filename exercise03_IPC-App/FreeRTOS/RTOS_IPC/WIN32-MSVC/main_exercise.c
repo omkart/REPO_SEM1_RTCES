@@ -139,8 +139,8 @@ void main_exercise( void )
 	}
 
 	/*Create Sensor tasks*/
-	uint8_t taskCount = 0;
-	uint8_t taskCountMax = (IPC_TASK_TYPE_SENSOR_MAX);
+	taskCount = 0;
+	taskCountMax = (IPC_TASK_TYPE_SENSOR_MAX);
 
 	for (taskCount = 0; taskCount < taskCountMax; taskCount++)
 	{
@@ -156,10 +156,53 @@ void main_exercise( void )
 
 	}
 }
-/*-----------------------------------------------------------*/
 
 
-/* TODO */
 /*-----------------------------------------------------------*/
+
+/*
+ *  Functions for Sensor Tasks
+ */
+void ipcSensorTask1(void* taskParameters)
+{
+	TickType_t xNextWakeTime;
+	const TickType_t xBlockTime = IPC_SENSOR_FREQ_MS_SENSOR_1;
+
+	/* Initialise xNextWakeTime - this only needs to be done once. */
+	xNextWakeTime = xTaskGetTickCount();
+	while (1)
+	{
+
+	}
+
+}
+
+void ipcSensorTask2a(void* taskParameters)
+{
+	TickType_t xNextWakeTime;
+	const TickType_t xBlockTime = IPC_SENSOR_FREQ_MS_SENSOR_2A;
+
+	/* Initialise xNextWakeTime - this only needs to be done once. */
+	xNextWakeTime = xTaskGetTickCount();
+	while (1)
+	{
+
+	}
+
+}
+
+void ipcSensorTask2b(void* taskParameters)
+{
+	TickType_t xNextWakeTime;
+	const TickType_t xBlockTime = IPC_SENSOR_FREQ_MS_SENSOR_2B;
+
+	/* Initialise xNextWakeTime - this only needs to be done once. */
+	xNextWakeTime = xTaskGetTickCount();
+	while (1)
+	{
+
+	}
+
+}
 
 
