@@ -17,12 +17,93 @@
 #include "timers.h"
 #include "semphr.h"
 
-/* TODO */
+/*Macros*/
+#define IPC_MAX_TASKS_CONTROLLER	2
+#define IPC_MAX_TASKS_SENSORS		3
+
+/*Sensing and polling Frequency*/
+#define IPC_SENSOR_FREQ_MS_SENSOR_1 pdMS_TO_TICKS( 200UL )			// 200ms
+#define IPC_SENSOR_FREQ_MS_SENSOR_2A pdMS_TO_TICKS( 500UL )			// 500ms
+#define IPC_SENSOR_FREQ_MS_SENSOR_2B pdMS_TO_TICKS( 1400UL )		// 1400ms
+
+
+/*Min and max count up done by every sensor*/
+#define IPC_SENSOR_1_MIN_COUNT		100U
+#define IPC_SENSOR_1_MAX_COUNT		199U
+
+#define IPC_SENSOR_2A_MIN_COUNT		200U
+#define IPC_SENSOR_2A_MAX_COUNT		249U
+
+#define IPC_SENSOR_2B_MIN_COUNT		250U
+#define IPC_SENSOR_2B_MAX_COUNT		299U
+
+
+
+/*
+	Priorities at which the tasks are created.
+ */
+typedef enum
+{
+	IPC_TASK_PRIORITY_1 = (tskIDLE_PRIORITY + 1), //Lowest priority
+	IPC_TASK_PRIORITY_2,
+	IPC_TASK_PRIORITY_3,
+	IPC_TASK_PRIORITY_UNDEFINED,
+}e_ipcTaskPriority;
+
+typedef enum
+{
+	IPC_TASK_TYPE_CONTROLLER_MAIN = 0,
+	IPC_TASK_TYPE_CONTROLLER_SEC,
+	IPC_TASK_TYPE_SENSOR_1,
+	IPC_TASK_TYPE_SENSOR_2A,
+	IPC_TASK_TYPE_SENSOR_2B,
+	IPC_TASK_TYPE_MAX,
+}e_ipcTaskType;
+
+
+/*
+  *  data structure
+  */
+
+typedef struct
+{
+	e_ipcTaskPriority priority;
+	unsigned long outputFrequency;
+	void (*funcPtr)(void);
+	TaskHandle_t taskHandle;
+	e_ipcTaskType taskType;
+
+}s_ipcTasks;
+
+
+/*Callback Functions*/
+//Controller functions
+void ipcControllerTaskMain(void* taskParameters);
+void ipcControllerTaskSecondary(void* taskParameters);
+
+//Sensor functions
+void ipcSensorTask1(void* taskParameters);
+void ipcSensorTask2a(void* taskParameters);
+void ipcSensorTask2b(void* taskParameters);
+
+
+/*IPC Tasks*/
+static s_ipcTasks ipcControllerTasks[IPC_MAX_TASKS_CONTROLLER];
+static s_ipcTasks ipcSensorTasks[IPC_MAX_TASKS_SENSORS];
 
 void main_exercise( void )
 {
+	/*Controller tasks*/
+	ipcControllerTasks[0].funcPtr = &ipcControllerTaskMain;
+	ipcControllerTasks[0].priority = IPC_TASK_PRIORITY_2;  // todo: decide the final priority, keep 2 for now
 
-	printf("Hello world");
+	ipcControllerTasks[1].funcPtr = &ipcControllerTaskSecondary;
+	ipcControllerTasks[1].priority = IPC_TASK_PRIORITY_2;  // todo: decide the final priority, keep 2 for now
+
+	/*Sensor Tasks*/
+	ipcSensorTasks[0].
+
+
 	/* TODO */
 }
 /*-----------------------------------------------------------*/
