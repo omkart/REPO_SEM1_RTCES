@@ -1,0 +1,87 @@
+﻿cl : command line  warning D9035: option 'Gm' has been deprecated and will be removed in a future release
+cl : command line  warning D9002: ignoring unknown option '/wc4574'
+  Run-time-stats-utils.c
+  main_exercise.c
+  tasks.c
+  queue.c
+  port.c
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\portable\MSVC-MingW\port.c(225,60): warning C4191: 'type cast': unsafe conversion from 'TaskFunction_t' to 'LPTHREAD_START_ROUTINE'
+          Making a function call using the resulting pointer may cause your program to fail
+  list.c
+  main.c
+  timers.c
+  stream_buffer.c
+  heap_5.c
+  event_groups.c
+  croutine.c
+  Generating Code...
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\croutine.c(314): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\croutine.c(312): message : index 'uxPriority' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\croutine.c(314): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\portable\MemMang\heap_5.c(212): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\portable\MemMang\heap_5.c(198): message : index '' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\portable\MemMang\heap_5.c(212): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(643): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(641): message : index '' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(643): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(641): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(638): message : index 'xReturn' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(641): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(800): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(792): message : index 'xBytesAvailable' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(800): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(794): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(792): message : index 'xBytesAvailable' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(794): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(838): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(829): message : index 'xBytesAvailable' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(838): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(775): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(767): message : index 'xBytesAvailable' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(775): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(900): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(893): message : index 'xBytesAvailable' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(900): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(593): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(591): message : index '' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(593): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(895): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(893): message : index 'xBytesAvailable' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(895): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(591): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(586): message : index 'xReturn' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(591): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(1162): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(1158): message : index 'xCount' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(1162): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(1154): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(1141): message : index 'xCount' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(1154): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(1111): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(1107): message : index 'xCount' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\stream_buffer.c(1111): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\timers.c(561): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\timers.c(558): message : index 'xNextExpireTime' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\timers.c(561): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\queue.c(2387): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\queue.c(2383): message : index 'xTicksToWait' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\queue.c(2387): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\queue.c(2464): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\queue.c(2460): message : index 'xTicksToWait' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\queue.c(2464): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\queue.c(2684): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\queue.c(2680): message : index 'ux' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\queue.c(2693): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\tasks.c(1324): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\tasks.c(1310): message : index 'xTicksToDelay' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\tasks.c(1324): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\tasks.c(4493): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\tasks.c(4491): message : index 'xTicksToWait' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\tasks.c(4493): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\tasks.c(4566): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\tasks.c(4564): message : index 'xTicksToWait' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\tasks.c(4566): message : feeds call on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\tasks.c(3505): warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\tasks.c(3503): message : index 'uxPriority' range checked by comparison on this line
+E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\Source\tasks.c(3505): message : feeds call on this line
+  WIN32.vcxproj -> E:\UNI STUTTGART\REPOS\exercise03_IPC-App\FreeRTOS\RTOS_IPC\WIN32-MSVC\Debug\RTOS_IPC.exe
