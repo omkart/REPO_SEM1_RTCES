@@ -155,6 +155,19 @@ void main_exercise( void )
 			&ipcSensorTasks[taskCount].taskHandle);												
 
 	}
+
+
+	/*
+	* Start the task instances.
+	*/
+	vTaskStartScheduler();
+
+
+	/* If all is well, the scheduler will now be running, and the following
+	line will never be reached.  If the following line does execute, then
+	there was insufficient FreeRTOS heap memory available for the idle and/or
+	timer tasks	to be created. */
+	while (1);
 }
 
 
@@ -167,11 +180,23 @@ void ipcSensorTask1(void* taskParameters)
 {
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = IPC_SENSOR_FREQ_MS_SENSOR_1;
+	static uint16_t counterSensor1 = IPC_SENSOR_1_MIN_COUNT - 1;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 	while (1)
 	{
+		/*Delay the task until the block time*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
+
+
+		counterSensor1++;
+		printf("Sensor 1 counted : %d\n", counterSensor1);
+		if (counterSensor1 >= IPC_SENSOR_1_MAX_COUNT)
+		{
+			//Handle roll over
+			counterSensor1 = IPC_SENSOR_1_MIN_COUNT - 1;
+		}
 
 	}
 
@@ -181,12 +206,22 @@ void ipcSensorTask2a(void* taskParameters)
 {
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = IPC_SENSOR_FREQ_MS_SENSOR_2A;
+	static uint16_t counterSensor2a = IPC_SENSOR_2A_MIN_COUNT - 1;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 	while (1)
 	{
+		/*Delay the task until the block time*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 
+		counterSensor2a++;
+		printf("Sensor 2A counted : %d\n", counterSensor2a);
+		if (counterSensor2a >= IPC_SENSOR_2A_MAX_COUNT)
+		{
+			//Handle roll over
+			counterSensor2a = IPC_SENSOR_2A_MIN_COUNT - 1;
+		}
 	}
 
 }
@@ -195,6 +230,45 @@ void ipcSensorTask2b(void* taskParameters)
 {
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = IPC_SENSOR_FREQ_MS_SENSOR_2B;
+	static uint16_t counterSensor2b = IPC_SENSOR_2B_MIN_COUNT-1;
+
+	/* Initialise xNextWakeTime - this only needs to be done once. */
+	xNextWakeTime = xTaskGetTickCount();
+	while (1)
+	{
+		/*Delay the task until the block time*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
+
+		counterSensor2b++;
+		printf("Sensor 2B counted : %d\n", counterSensor2b);
+		if (counterSensor2b >= IPC_SENSOR_2B_MAX_COUNT)
+		{
+			//Handle roll over
+			counterSensor2b = IPC_SENSOR_2B_MIN_COUNT - 1;
+		}
+	}
+
+}
+
+
+/*Controller Tasks*/
+void ipcControllerTaskMain(void* taskParameters)
+{
+	TickType_t xNextWakeTime;
+
+	/* Initialise xNextWakeTime - this only needs to be done once. */
+	xNextWakeTime = xTaskGetTickCount();
+	while (1)
+	{
+
+
+	}
+
+}
+
+void ipcControllerTaskSecondary(void* taskParameters)
+{
+	TickType_t xNextWakeTime;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
