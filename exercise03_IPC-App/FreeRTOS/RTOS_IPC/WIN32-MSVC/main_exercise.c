@@ -54,11 +54,17 @@ typedef enum
 {
 	IPC_TASK_TYPE_CONTROLLER_MAIN = 0,
 	IPC_TASK_TYPE_CONTROLLER_SEC,
-	IPC_TASK_TYPE_SENSOR_1,
+	IPC_TASK_TYPE_CONTROLLER_MAX,
+}e_ipcControllerTaskType;
+
+typedef enum
+{
+	IPC_TASK_TYPE_SENSOR_1 = 0,
 	IPC_TASK_TYPE_SENSOR_2A,
 	IPC_TASK_TYPE_SENSOR_2B,
-	IPC_TASK_TYPE_MAX,
-}e_ipcTaskType;
+	IPC_TASK_TYPE_SENSOR_MAX,
+}e_ipcSensorTaskType;
+
 
 
 /*
@@ -71,8 +77,6 @@ typedef struct
 	unsigned long outputFrequency;
 	void (*funcPtr)(void);
 	TaskHandle_t taskHandle;
-	e_ipcTaskType taskType;
-
 }s_ipcTasks;
 
 
@@ -88,20 +92,31 @@ void ipcSensorTask2b(void* taskParameters);
 
 
 /*IPC Tasks*/
-static s_ipcTasks ipcControllerTasks[IPC_MAX_TASKS_CONTROLLER];
-static s_ipcTasks ipcSensorTasks[IPC_MAX_TASKS_SENSORS];
+static s_ipcTasks ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_MAX];
+static s_ipcTasks ipcSensorTasks[IPC_TASK_TYPE_SENSOR_MAX];
 
 void main_exercise( void )
 {
 	/*Controller tasks*/
-	ipcControllerTasks[0].funcPtr = &ipcControllerTaskMain;
-	ipcControllerTasks[0].priority = IPC_TASK_PRIORITY_2;  // todo: decide the final priority, keep 2 for now
+	ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_MAIN].funcPtr = &ipcControllerTaskMain;
+	ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_MAIN].priority = IPC_TASK_PRIORITY_2;  // todo: decide the final priority, keep 2 for now
 
-	ipcControllerTasks[1].funcPtr = &ipcControllerTaskSecondary;
-	ipcControllerTasks[1].priority = IPC_TASK_PRIORITY_2;  // todo: decide the final priority, keep 2 for now
+
+	ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_SEC].funcPtr = &ipcControllerTaskSecondary;
+	ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_SEC].priority = IPC_TASK_PRIORITY_2;  // todo: decide the final priority, keep 2 for now
+
 
 	/*Sensor Tasks*/
-	ipcSensorTasks[0].
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].funcPtr = &ipcSensorTask1;
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].outputFrequency = IPC_SENSOR_FREQ_MS_SENSOR_1;
+
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].funcPtr = &ipcSensorTask2a;
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].outputFrequency = IPC_SENSOR_FREQ_MS_SENSOR_2A;
+
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].funcPtr = &ipcSensorTask2b;
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].outputFrequency = IPC_SENSOR_FREQ_MS_SENSOR_2B;
+
+
 
 
 	/* TODO */
