@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <conio.h>
+#include <string.h>
 
 /* Kernel includes. */
 #include "FreeRTOS.h"
@@ -26,7 +27,7 @@
 #define IPC_SENSOR_FREQ_MS_SENSOR_2A pdMS_TO_TICKS( 500UL )			// 500ms
 #define IPC_SENSOR_FREQ_MS_SENSOR_2B pdMS_TO_TICKS( 1400UL )		// 1400ms
 
-#define IPC_CONTROLLER_FREQ_MS pdMS_TO_TICKS( 50UL )		// 1500ms used only for testing purposes
+#define IPC_CONTROLLER_FREQ_MS pdMS_TO_TICKS( 0UL )		// 1500ms used only for testing purposes
 
 
 /*Min and max count up done by every sensor*/
@@ -40,7 +41,7 @@
 #define IPC_SENSOR_2B_MAX_COUNT		299U
 
 /*Queue Size for Sensors*/
-#define QUEUE_SENSORS_LENGTH				30U
+#define QUEUE_SENSORS_LENGTH				150U
 #define QUEUE_SENSORS_ITEM_SIZE				sizeof( uint16_t ) 
 
 /*
@@ -100,6 +101,9 @@ void ipcSensorTask2b(void* taskParameters);
 static s_ipcTasks ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_MAX];	//Improvement : could be clubbed into single array and accessed through single enum type as index
 static s_ipcTasks ipcSensorTasks[IPC_TASK_TYPE_SENSOR_MAX];
 static QueueSetHandle_t xQueueSet1, xQueueSet2;
+
+/*Additional Functions*/
+void getSensorData(e_ipcControllerTaskType controllerType,QueueSetMemberHandle_t* xActivatedMember2);
 
 void main_exercise( void )
 {
@@ -290,50 +294,71 @@ void ipcControllerTaskMain(void* taskParameters)
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
-	uint16_t dataFromQueueSensor1 = 0;
-	uint16_t dataFromQueueSensor2A = 0;
-	uint16_t dataFromQueueSensor2B = 0;
 
 	QueueSetMemberHandle_t xActivatedMember1, xActivatedMember2;
 	while (1)
 	{
-		/*Delay the task until the block time
-		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
-
-
-		if (xQueueReceive(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].queueHandle,&(dataFromQueueSensor1),(TickType_t)10) == pdPASS)
+		/*Once 2000ms is passed a failure is emulated in Controller 1 and controller 2 now takes over the sensing operation*/
+		if ((xTaskGetTickCount() / portTICK_PERIOD_MS) >= 2000)
 		{
-			printf("Controller 1 received data from Sensor 1: %d\n", dataFromQueueSensor1);
-		}
-		*/
-
-		/* Block to wait for something to be available from the queues that have been added to the set.  Don't block longer than 1500ms. */
-		xActivatedMember2 = xQueueSelectFromSet(xQueueSet2, pdMS_TO_TICKS(1500UL));
-
-		/*Once we reach here means there was a data available from either of the sensors 2A or 2B*/
-		printf("Controller 1 received data at %d; ", xTaskGetTickCount()/ portTICK_PERIOD_MS);
-
-		/*Lets first get the data from Sensor 1*/
-		xQueueReceive(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].queueHandle, &dataFromQueueSensor1, 0);
-		printf("Sensor 1: %d;\t", dataFromQueueSensor1);
-
-		if (xActivatedMember2 == ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2A].queueHandle)
-		{
-			xQueueReceive(xActivatedMember2, &dataFromQueueSensor2A, 0);
-			printf("Sensor 2A: %d;\n", dataFromQueueSensor2A);
-		}
-		else if (xActivatedMember2 == ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2B].queueHandle)
-		{
-			xQueueReceive(xActivatedMember2, &dataFromQueueSensor2B, 0);
-			printf("Sensor 2B: %d;\n", dataFromQueueSensor2B);
+			printf("Controller 1 has had an error at %ld\n", (xTaskGetTickCount() / portTICK_PERIOD_MS));
+			/* Send notification to start execution of Controller 2 as Controller 1 has failed*/
+			xTaskNotifyGive(ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_SEC].taskHandle);
+			vTaskDelete(NULL);
+			
 		}
 		else
 		{
-			printf("Timed out without any data\n");
+			getSensorData(IPC_TASK_TYPE_CONTROLLER_MAIN,&xActivatedMember2);
 		}
 
 		
 		
+	}
+
+}
+
+void getSensorData(e_ipcControllerTaskType controllerType,QueueSetMemberHandle_t* xActivatedMember2)
+{
+
+	auto uint16_t dataFromQueueSensor1 = 0;
+	auto uint16_t dataFromQueueSensor2A = 0;
+	auto uint16_t dataFromQueueSensor2B = 0;
+	char controllerValueForPrint[20];
+	if (controllerType == IPC_TASK_TYPE_CONTROLLER_MAIN)
+	{
+		strcpy(controllerValueForPrint, "Controller 1") ;
+	}
+	else if (controllerType == IPC_TASK_TYPE_CONTROLLER_SEC)
+	{
+		strcpy(controllerValueForPrint, "Controller 2");
+	}
+
+	/* Block to wait for something to be available from the queues that have been added to the set.  Don't block longer than 1500ms. */
+	xActivatedMember2 = xQueueSelectFromSet(xQueueSet2, pdMS_TO_TICKS(1500UL));
+
+	/*Once we reach here means there was a data available from either of the sensors 2A or 2B*/
+	printf("%s received data at %ld; ", controllerValueForPrint, xTaskGetTickCount() / portTICK_PERIOD_MS);
+
+	/*Lets first get the data from Sensor 1*/
+	xQueueReceive(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].queueHandle, &dataFromQueueSensor1, 5);
+	printf("Sensor 1: %d;\t", dataFromQueueSensor1);
+
+	if (xActivatedMember2 == ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2A].queueHandle)
+	{
+		if (xQueueReceive(xActivatedMember2, &dataFromQueueSensor2A, 5) == pdPASS) { printf("Sensor 2A: %d;\n", dataFromQueueSensor2A); }
+		else { printf("Unable to get data from queue 2A"); }
+
+	}
+	else if (xActivatedMember2 == ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2B].queueHandle)
+	{
+		if (xQueueReceive(xActivatedMember2, &dataFromQueueSensor2B, 5) == pdPASS) { printf("Sensor 2B: %d;\n", dataFromQueueSensor2B); }
+		else { printf("Unable to get data from queue 2B"); }
+
+	}
+	else
+	{
+		printf("Timed out without any data\n");
 	}
 
 }
@@ -345,9 +370,18 @@ void ipcControllerTaskSecondary(void* taskParameters)
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
+
+	QueueSetMemberHandle_t xActivatedMember2;
+
+	/*Block until other task notifies to start working*/
+	ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
 	while (1)
 	{
-
+		
+		
+		/*controller 2 will start sensing as controller 1 has failed*/
+		getSensorData(IPC_TASK_TYPE_CONTROLLER_SEC, &xActivatedMember2);
 	}
 
 }
