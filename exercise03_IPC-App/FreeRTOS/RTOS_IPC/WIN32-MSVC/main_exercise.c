@@ -27,7 +27,7 @@
 #define IPC_SENSOR_FREQ_MS_SENSOR_2A pdMS_TO_TICKS( 500UL )			// 500ms
 #define IPC_SENSOR_FREQ_MS_SENSOR_2B pdMS_TO_TICKS( 1400UL )		// 1400ms
 
-#define IPC_CONTROLLER_FREQ_MS pdMS_TO_TICKS( 0UL )		// 1500ms used only for testing purposes
+#define IPC_CONTROLLER_FREQ_MS pdMS_TO_TICKS( 1410UL )		// 1500ms used only for testing purposes
 
 
 /*Min and max count up done by every sensor*/
@@ -41,7 +41,7 @@
 #define IPC_SENSOR_2B_MAX_COUNT		299U
 
 /*Queue Size for Sensors*/
-#define QUEUE_SENSORS_LENGTH				150U
+#define QUEUE_SENSORS_LENGTH				200U
 #define QUEUE_SENSORS_ITEM_SIZE				sizeof( uint16_t ) 
 
 /*
@@ -109,25 +109,25 @@ void main_exercise( void )
 {
 	/*Controller tasks*/
 	ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_MAIN].funcPtr = &ipcControllerTaskMain;
-	ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_MAIN].priority = IPC_TASK_PRIORITY_2;  // todo: decide the final priority, keep 2 for now
+	ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_MAIN].priority = IPC_TASK_PRIORITY_3;  // todo: decide the final priority, keep 2 for now
 
 
 	ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_SEC].funcPtr = &ipcControllerTaskSecondary;
-	ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_SEC].priority = IPC_TASK_PRIORITY_2;  // todo: decide the final priority, keep 2 for now
+	ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_SEC].priority = IPC_TASK_PRIORITY_3;  // todo: decide the final priority, keep 2 for now
 
 
 	/*Sensor Tasks*/
 	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].funcPtr = &ipcSensorTask1;
 	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].outputFrequency = IPC_SENSOR_FREQ_MS_SENSOR_1;
-	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].priority = IPC_TASK_PRIORITY_3;				// todo: decide the final priority, keep 3 for now
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].priority = IPC_TASK_PRIORITY_2;				// todo: decide the final priority, keep 3 for now
 
 	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2A].funcPtr = &ipcSensorTask2a;
 	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2A].outputFrequency = IPC_SENSOR_FREQ_MS_SENSOR_2A;
-	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2A].priority = IPC_TASK_PRIORITY_3;				// todo: decide the final priority, keep 3 for now
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2A].priority = IPC_TASK_PRIORITY_2;				// todo: decide the final priority, keep 3 for now
 
 	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2B].funcPtr = &ipcSensorTask2b;
 	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2B].outputFrequency = IPC_SENSOR_FREQ_MS_SENSOR_2B;
-	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2B].priority = IPC_TASK_PRIORITY_3;				// todo: decide the final priority, keep 3 for now
+	ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2B].priority = IPC_TASK_PRIORITY_2;				// todo: decide the final priority, keep 3 for now
 
 
 	/*Create Controller tasks*/
@@ -206,12 +206,16 @@ void ipcSensorTask1(void* taskParameters)
 {
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = IPC_SENSOR_FREQ_MS_SENSOR_1;
-	static uint16_t counterSensor1 = IPC_SENSOR_1_MIN_COUNT - 1;
+	static uint16_t counterSensor1 = IPC_SENSOR_1_MIN_COUNT;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 	while (1)
 	{
+
+		/*Delay the task until the block time*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
+
 		counterSensor1++;
 		printf("Sensor 1 counted : %d\n", counterSensor1);
 		xQueueSend(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].queueHandle, (void*)&counterSensor1, (TickType_t)10);
@@ -219,11 +223,10 @@ void ipcSensorTask1(void* taskParameters)
 		if (counterSensor1 >= IPC_SENSOR_1_MAX_COUNT)
 		{
 			//Handle roll over
-			counterSensor1 = IPC_SENSOR_1_MIN_COUNT - 1;
+			counterSensor1 = IPC_SENSOR_1_MIN_COUNT;
 		}
 
-		/*Delay the task until the block time*/
-		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
+		
 
 	}
 
@@ -233,12 +236,14 @@ void ipcSensorTask2a(void* taskParameters)
 {
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = IPC_SENSOR_FREQ_MS_SENSOR_2A;
-	static uint16_t counterSensor2a = IPC_SENSOR_2A_MIN_COUNT - 1;
+	static uint16_t counterSensor2a = IPC_SENSOR_2A_MIN_COUNT;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 	while (1)
 	{
+		/*Delay the task until the block time*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 
 		counterSensor2a++;
 		printf("Sensor 2A counted : %d\n", counterSensor2a);
@@ -247,11 +252,10 @@ void ipcSensorTask2a(void* taskParameters)
 		if (counterSensor2a >= IPC_SENSOR_2A_MAX_COUNT)
 		{
 			//Handle roll over
-			counterSensor2a = IPC_SENSOR_2A_MIN_COUNT - 1;
+			counterSensor2a = IPC_SENSOR_2A_MIN_COUNT;
 		}
 
-		/*Delay the task until the block time*/
-		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
+		
 	}
 
 }
@@ -260,13 +264,14 @@ void ipcSensorTask2b(void* taskParameters)
 {
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = IPC_SENSOR_FREQ_MS_SENSOR_2B;
-	static uint16_t counterSensor2b = IPC_SENSOR_2B_MIN_COUNT-1;
+	static uint16_t counterSensor2b = IPC_SENSOR_2B_MIN_COUNT;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 	while (1)
 	{
-		
+		/*Delay the task until the block time*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 
 		counterSensor2b++;
 		printf("Sensor 2B counted : %d\n", counterSensor2b);
@@ -275,11 +280,10 @@ void ipcSensorTask2b(void* taskParameters)
 		if (counterSensor2b >= IPC_SENSOR_2B_MAX_COUNT)
 		{
 			//Handle roll over
-			counterSensor2b = IPC_SENSOR_2B_MIN_COUNT - 1;
+			counterSensor2b = IPC_SENSOR_2B_MIN_COUNT;
 		}
 
-		/*Delay the task until the block time*/
-		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
+		
 	}
 
 }
@@ -294,10 +298,16 @@ void ipcControllerTaskMain(void* taskParameters)
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
+	QueueSetMemberHandle_t xActivatedMember2;
 
-	QueueSetMemberHandle_t xActivatedMember1, xActivatedMember2;
+	/*Delay the task until the block time*/
+	//vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 	while (1)
 	{
+		
+
+		getSensorData(IPC_TASK_TYPE_CONTROLLER_MAIN, &xActivatedMember2);
+
 		/*Once 2000ms is passed a failure is emulated in Controller 1 and controller 2 now takes over the sensing operation*/
 		if ((xTaskGetTickCount() / portTICK_PERIOD_MS) >= 2000)
 		{
@@ -309,13 +319,9 @@ void ipcControllerTaskMain(void* taskParameters)
 		}
 		else
 		{
-			getSensorData(IPC_TASK_TYPE_CONTROLLER_MAIN,&xActivatedMember2);
+			
 		}
-
-		
-		
 	}
-
 }
 
 void getSensorData(e_ipcControllerTaskType controllerType,QueueSetMemberHandle_t* xActivatedMember2)
