@@ -178,10 +178,15 @@ void main_exercise( void )
 	xQueueAddToSet(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].queueHandle, xQueueSet1);
 
 	//Sensor 2A and 2B data is added to another set
+	/*
+		Using Queue Sets as a way of establishing the logic required instead of using the signal flags
+		With queue set for Sensor 2A and Sensor 2B, any new data in either of the sensor would enable the 
+		Controller 1 to start the sensing of the data in queue. Since Sensor 1 is at high frequency compared 
+		to either of Sensor 2, whenever data from Sensor 2 is available, Sensor 1 data will always be the latest data.
+	*/
 	xQueueSet2 = xQueueCreateSet(2*QUEUE_SENSORS_LENGTH);
 	xQueueAddToSet(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2A].queueHandle, xQueueSet2);
 	xQueueAddToSet(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_2B].queueHandle, xQueueSet2);
-
 
 	/*
 	* Start the task instances.
