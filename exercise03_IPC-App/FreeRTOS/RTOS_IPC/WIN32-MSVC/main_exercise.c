@@ -41,7 +41,7 @@
 #define IPC_SENSOR_2B_MAX_COUNT		299U
 
 /*Queue Size for Sensors*/
-#define QUEUE_SENSORS_LENGTH				200U
+#define QUEUE_SENSORS_LENGTH				50U
 #define QUEUE_SENSORS_ITEM_SIZE				sizeof( uint16_t ) 
 
 /*
