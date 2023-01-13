@@ -100,7 +100,7 @@ void ipcSensorTask2b(void* taskParameters);
 /*IPC Tasks*/
 static s_ipcTasks ipcControllerTasks[IPC_TASK_TYPE_CONTROLLER_MAX];	//Improvement : could be clubbed into single array and accessed through single enum type as index
 static s_ipcTasks ipcSensorTasks[IPC_TASK_TYPE_SENSOR_MAX];
-static QueueSetHandle_t xQueueSet1, xQueueSet2;
+static QueueSetHandle_t xQueueSet2;
 
 /*Additional Functions*/
 void getSensorData(e_ipcControllerTaskType controllerType,QueueSetMemberHandle_t* xActivatedMember2);
@@ -173,11 +173,8 @@ void main_exercise( void )
 
 	
 	/*Create queue sets on which the Controller tasks will keep a check*/
-	//Sensor 1 data is of set 1
-	xQueueSet1 = xQueueCreateSet(QUEUE_SENSORS_LENGTH);
-	xQueueAddToSet(ipcSensorTasks[IPC_TASK_TYPE_SENSOR_1].queueHandle, xQueueSet1);
 
-	//Sensor 2A and 2B data is added to another set
+	//Sensor 2A and 2B data is added to a set
 	/*
 		Using Queue Sets as a way of establishing the logic required instead of using the signal flags
 		With queue set for Sensor 2A and Sensor 2B, any new data in either of the sensor would enable the 
