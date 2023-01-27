@@ -1,0 +1,24 @@
+﻿cl : command line  warning D9035: option 'Gm' has been deprecated and will be removed in a future release
+  main_exercise.c
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(95,2): warning C4091: 'typedef ': ignored on left of '<unnamed-enum-PCP_RESOURCE_A>' when no variable is declared
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(110,3): warning C4201: nonstandard extension used: nameless struct/union
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(152,2): warning C4113: 'void (__cdecl *)(void *)' differs in parameter lists from 'void (__cdecl *)(void)'
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(152,68): warning C4047: 'initializing': 'uint32_t' differs in levels of indirection from 'void *'
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(153,2): warning C4113: 'void (__cdecl *)(void *)' differs in parameter lists from 'void (__cdecl *)(void)'
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(153,82): warning C4047: 'initializing': 'uint32_t' differs in levels of indirection from 'void *'
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(154,2): warning C4113: 'void (__cdecl *)(void *)' differs in parameter lists from 'void (__cdecl *)(void)'
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(154,96): warning C4047: 'initializing': 'uint32_t' differs in levels of indirection from 'void *'
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(155,2): warning C4113: 'void (__cdecl *)(void *)' differs in parameter lists from 'void (__cdecl *)(void)'
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(155,96): warning C4047: 'initializing': 'uint32_t' differs in levels of indirection from 'void *'
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(185,73): warning C4047: '!=': 'uint32_t' differs in levels of indirection from 'void *'
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(186,71): warning C4047: '!=': 'uint32_t' differs in levels of indirection from 'void *'
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(203,42): warning C4113: 'void (__cdecl *)(void)' differs in parameter lists from 'TaskFunction_t'
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(240,28): warning C4100: 'pvParameters': unreferenced formal parameter
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(258,28): warning C4100: 'pvParameters': unreferenced formal parameter
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(275,28): warning C4100: 'pvParameters': unreferenced formal parameter
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(292,28): warning C4100: 'pvParameters': unreferenced formal parameter
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(295,19): warning C4189: 'xBlockTime': local variable is initialized but not referenced
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(318,61): warning C4047: '!=': 'uint32_t' differs in levels of indirection from 'void *'
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(319,59): warning C4047: '!=': 'uint32_t' differs in levels of indirection from 'void *'
+E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\main_exercise.c(354,7): warning C4002: too many arguments for function-like macro invocation 'xSemaphoreGive'
+  WIN32.vcxproj -> E:\UNI STUTTGART\REPOS\exercise04_PCP-App\FreeRTOS\PCP-App\WIN32-MSVC\Debug\PCP-App.exe
