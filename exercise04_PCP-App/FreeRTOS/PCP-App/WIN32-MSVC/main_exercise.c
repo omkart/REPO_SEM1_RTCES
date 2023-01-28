@@ -51,6 +51,22 @@
 #include "timers.h"
 #include "semphr.h"
 
+/*
+ Q3 b )
+
+ - Yes there could be significant differences between a system call and a wrapper function developed below on application level.
+ The system calls could be atomic in nature ensuring there are no incorrect context switch taking place whereas that isnt the 
+ case with wrapper function (usPrioritySemaphoreWait() )
+ - It could essentially be more optimised and would reduce the deviation in time at which the resource access request has been made
+ and the time at which the resource access request is actually processed when the resource is available for a given task
+ - There could be edge cases when changing the priority and its impact on the overall scheduling which may not be covered
+ in the current wrapper function. System calls should be able to take care of these cases
+
+*/
+
+
+
+
 #define PCP_TASKS_MAX					4U
 #define PCP_TASK_PERIOD					pdMS_TO_TICKS( 20000UL )		// 10s
 
@@ -121,7 +137,7 @@ typedef struct
 
 typedef struct
 {
-	e_pcpTaskPriority priority;
+	e_pcpTaskPriority originalPriority;
 	uint32_t relativeReleaseTime;
 	uint32_t relativeExecTime;
 	unsigned long period;
@@ -131,7 +147,7 @@ typedef struct
 	u_resource resources[mainNUMBER_OF_SEMAPHORS];
 	e_pcpTaskNumber taskNb;
 	TaskHandle_t taskHandle;
-
+	e_pcpTaskPriority previousPriority;
 }s_pcpTasks;
 
 s_semaphoreData semaphoreData[mainNUMBER_OF_SEMAPHORS];
@@ -215,7 +231,8 @@ void main_exercise(void)
 
 		}
 
-		
+		/*Previous priority will be the original priority initally*/
+		pcpTasks[taskCount].previousPriority = pcpTasks[taskCount].originalPriority;
 
 
 		/*
@@ -225,7 +242,7 @@ void main_exercise(void)
 			"PCP_TASKS", 											/* The text name assigned to the task - for debug only as it is not used by the kernel. */
 			configMINIMAL_STACK_SIZE, 								/* The size of the stack to allocate to the task. */
 			NULL, 													/* The parameter passed to the task - not used in this simple case. */
-			pcpTasks[taskCount].priority,							/* The priority assigned to the task. */
+			pcpTasks[taskCount].originalPriority,							/* The priority assigned to the task. */
 			&pcpTasks[taskCount].taskHandle);						/* The task handle is not required, so NULL is passed. */
 
 	}
@@ -437,32 +454,33 @@ void usPrioritySemaphoreWait(s_pcpTasks* pcpTask, e_pcpResource pcpResource)
 			{
 				/* See if we can obtain the semaphore.  If the semaphore is not
 				available wait 5 ticks to see if it becomes free. */
-				uint32_t currentTaskPriority = uxTaskPriorityGet(pcpTask->taskHandle);
-				if (xSemaphoreTake(semaphoreData[pcpResource].semaphoreHandle, (TickType_t)5) == pdTRUE)
+				uint32_t priorityBeforeApplyingCeilingFunc = uxTaskPriorityGet(pcpTask->taskHandle);
+				if (xSemaphoreTake(semaphoreData[pcpResource].semaphoreHandle, (TickType_t)1) == pdTRUE)
 				{
 					//Once we access the semaphore, we will update the priority of the existing task to the ceiling function priority of the resource
 					
-					if (pcpTask->resources[pcpResource].ceilingPriority > currentTaskPriority)
+					if (pcpTask->resources[pcpResource].ceilingPriority > priorityBeforeApplyingCeilingFunc)
 					{
 						vTaskPrioritySet(pcpTask->taskHandle, pcpTask->resources[pcpResource].ceilingPriority);
 
 						printf("Task %d acquired resource %d and changed its priority from %d to %d.\n",
-							pcpTask->taskNb + 1, pcpResource + 1, currentTaskPriority, pcpTask->resources[pcpResource].ceilingPriority);
+							pcpTask->taskNb + 1, pcpResource + 1, priorityBeforeApplyingCeilingFunc, pcpTask->resources[pcpResource].ceilingPriority);
 
 					}
 					else
 					{
-						/*Retain the priority of the task and store it*/
-						pcpTask->priority = currentTaskPriority;
+						
 						printf("Task %d acquired resource %d and its priority is not changed & remains as %d.\n",
-							pcpTask->taskNb + 1, pcpResource + 1, currentTaskPriority);
+							pcpTask->taskNb + 1, pcpResource + 1, priorityBeforeApplyingCeilingFunc);
 					}
+					/*Retain the priority of the task and store it*/
+					pcpTask->previousPriority = priorityBeforeApplyingCeilingFunc;
 
 				}
 				else
 				{
-					printf("Task %d could NOT acquire resource %d with priority of %d\n",
-						pcpTask->taskNb + 1, pcpResource + 1, currentTaskPriority);
+					//printf("Task %d could NOT acquire resource %d with priority of %d\n",
+						//pcpTask->taskNb + 1, pcpResource + 1, currentTaskPriority);
 				}
 			}
 		}
@@ -491,26 +509,43 @@ void usPrioritySemaphoreSignal(s_pcpTasks* pcpTask, e_pcpResource pcpResource)
 				//Check if the task is currently accessing the Resource and only then it will release
 				if(xSemaphoreGetMutexHolder(semaphoreData[pcpResource].semaphoreHandle) == pcpTask->taskHandle)
 				{
-				taskENTER_CRITICAL();
-				if (xSemaphoreGive(semaphoreData[pcpResource].semaphoreHandle) == pdTRUE)
-				{
-					//Once we access the semaphore, we will restore the priority of the existing task
-					vTaskPrioritySet(pcpTask->taskHandle, pcpTask->priority);
+					taskENTER_CRITICAL();
+					if (xSemaphoreGive(semaphoreData[pcpResource].semaphoreHandle) == pdTRUE)
+					{
+						//Once we access the semaphore, we will restore the priority of the existing task
 
-					printf("Task %d released resource %d and changed its priority from %d to %d.\n",
-						pcpTask->taskNb + 1, pcpResource + 1, pcpTask->resources[pcpResource].ceilingPriority, pcpTask->priority);
+						/*If the task is not locking on any of the resource then it should restore the priority to its original priority*/
+						if (xSemaphoreGetMutexHolder(semaphoreData[PCP_RESOURCE_A].semaphoreHandle) != pcpTask->taskHandle &&
+							xSemaphoreGetMutexHolder(semaphoreData[PCP_RESOURCE_B].semaphoreHandle) != pcpTask->taskHandle &&
+							xSemaphoreGetMutexHolder(semaphoreData[PCP_RESOURCE_C].semaphoreHandle) != pcpTask->taskHandle)
+						{
+							printf("Task %d released resource %d and changed its priority from %d to %d.\n",
+								pcpTask->taskNb + 1, pcpResource + 1, uxTaskPriorityGet(pcpTask->taskHandle), pcpTask->originalPriority);
 
-				}
-				else
-				{
-					printf("Task %d could NOT release resource %d with priority %d.\n",
-						pcpTask->taskNb + 1, pcpResource + 1, uxTaskPriorityGet(pcpTask->taskHandle));
-				}
+							vTaskPrioritySet(pcpTask->taskHandle, pcpTask->originalPriority);
+							
+						}
+						else
+						{
+							printf("Task %d released resource %d and changed its priority from %d to %d.\n",
+								pcpTask->taskNb + 1, pcpResource + 1, uxTaskPriorityGet(pcpTask->taskHandle), pcpTask->previousPriority);
 
-				taskEXIT_CRITICAL();
+							vTaskPrioritySet(pcpTask->taskHandle, pcpTask->previousPriority);
+							
+						}
+					}
+					else
+					{
+						printf("Task %d could NOT release resource %d with priority %d.\n",
+							pcpTask->taskNb + 1, pcpResource + 1, uxTaskPriorityGet(pcpTask->taskHandle));
+					}
+
+					taskEXIT_CRITICAL();
 			}
 		}
 	}
-
-
 }
+
+
+
+
