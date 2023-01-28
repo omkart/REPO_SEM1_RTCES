@@ -52,12 +52,12 @@
 #include "semphr.h"
 
 #define PCP_TASKS_MAX					4U
-#define PCP_TASK_PERIOD					pdMS_TO_TICKS( 10000UL )		// 10s
+#define PCP_TASK_PERIOD					pdMS_TO_TICKS( 2000UL )		// 10s
 
-#define TIME_UNIT_TO_MS_RES					100	//Resolution of 100ms 
+#define TIME_UNIT_TO_MS_RES						100	//Resolution of 100ms 
 #define mainNUMBER_OF_SEMAPHORS					( 3 )
 
-#define TICKS_DEVIATION_MARGIN		10
+#define TICKS_DEVIATION_MARGIN					10
 
 // TODO
 
@@ -93,7 +93,7 @@ typedef enum
 	PCP_RESOURCE_A = 0,
 	PCP_RESOURCE_B,
 	PCP_RESOURCE_C,
-};
+}e_pcpResource;
 /*
   *  data structure
   */
@@ -109,9 +109,15 @@ typedef union
 		uint32_t unlockingTime : 32;
 
 	};
-
+	
 }u_resource;
 
+
+typedef struct
+{
+	SemaphoreHandle_t semaphoreHandle;
+	TaskHandle_t* taskAssigned;
+}s_semaphoreData;
 
 typedef struct
 {
@@ -127,7 +133,7 @@ typedef struct
 	TaskHandle_t taskHandle;
 }s_pcpTasks;
 
-
+s_semaphoreData semaphoreData[mainNUMBER_OF_SEMAPHORS];
 
 
 /*-----------------------------------------------------------*/
@@ -140,22 +146,9 @@ static void prvTask2(void* pvParameters);
 static void prvTask3(void* pvParameters);
 static void prvTask4(void* pvParameters);
 
-void usPrioritySemaphoreWait(s_pcpTasks* pcpTask,uint32_t startTimeOfTask);
-void usPrioritySemaphoreSignal(s_pcpTasks* pcpTask, uint32_t startTimeOfTask);
+void usPrioritySemaphoreWait(s_pcpTasks* pcpTask, e_pcpResource resource);
+void usPrioritySemaphoreSignal(s_pcpTasks* pcpTask, e_pcpResource resource);
 
-
-static void accessSharedResourceA(s_pcpTasks* pcpTask, uint32_t ulTimeUnits);
-static void accessSharedResourceB(s_pcpTasks* pcpTask, uint32_t ulTimeUnits);
-static void accessSharedResourceC(s_pcpTasks* pcpTask, uint32_t ulTimeUnits);
-
-
-inline void usPrioritySemaphoreSignalResourceHandlerA(s_pcpTasks* pcpTask, uint32_t startTimeOfTask);
-inline void usPrioritySemaphoreSignalResourceHandlerB(s_pcpTasks* pcpTask, uint32_t startTimeOfTask);
-inline void usPrioritySemaphoreSignalResourceHandlerC(s_pcpTasks* pcpTask, uint32_t startTimeOfTask);
-
-inline void usPrioritySemaphoreSignalHandlerA(s_pcpTasks* pcpTask, uint32_t startTimeOfTask);
-inline void usPrioritySemaphoreSignalHandlerB(s_pcpTasks* pcpTask, uint32_t startTimeOfTask);
-inline void usPrioritySemaphoreSignalHandlerC(s_pcpTasks* pcpTask, uint32_t startTimeOfTask);
 
 
 /*-----------------------------------------------------------*/
@@ -171,29 +164,27 @@ s_pcpTasks pcpTasks[PCP_TASKS_MAX] = {
 	{PCP_TASK_PRIORITY_2,		0U,			9U,			PCP_TASK_PERIOD,		&prvTask4,		{{ PCP_TASK_PRIORITY_4,2,8 },				{ PCP_TASK_PRIORITY_5,4,6 },				{ PCP_TASK_PRIORITY_5,NULL,NULL }	},		PCP_TASK_NUMBER_4},
 };
 
-static SemaphoreHandle_t semaphoreResourceA, semaphoreResourceB, semaphoreResourceC;
-
 static uint32_t globalTimeProfile;
 
 
 void main_exercise(void)
 {
-	//resources[0].xSemaphore = xSemaphoreCreateBinary();
+	/*Creating the Semaphores for Resource*/
 
-	semaphoreResourceA = xSemaphoreCreateMutex();
-	semaphoreResourceB = xSemaphoreCreateMutex();
-	semaphoreResourceC = xSemaphoreCreateMutex();
+	semaphoreData[PCP_RESOURCE_A].semaphoreHandle = xSemaphoreCreateMutex();
+	semaphoreData[PCP_RESOURCE_B].semaphoreHandle = xSemaphoreCreateMutex();
+	semaphoreData[PCP_RESOURCE_C].semaphoreHandle = xSemaphoreCreateMutex();
 
-
-	if (semaphoreResourceA == NULL)
+	/*Verify if the creating of Semaphore was a success or not*/
+	if (semaphoreData[PCP_RESOURCE_A].semaphoreHandle == NULL || \
+		semaphoreData[PCP_RESOURCE_B].semaphoreHandle == NULL || \
+		semaphoreData[PCP_RESOURCE_C].semaphoreHandle == NULL )
 	{
 		printf("There was insufficient FreeRTOS heap available for the semaphore to be created successfully\n");
 	}
 	else
 	{
-		/* The semaphore can now be used. Its handle is stored in the
-		xSemahore variable.  Calling xSemaphoreTake() on the semaphore here
-		will fail until the semaphore has first been given. */
+		/* The semaphore can now be used. */
 	}
 
 
@@ -222,6 +213,8 @@ void main_exercise(void)
 			}
 
 		}
+
+		
 
 
 		/*
@@ -266,23 +259,39 @@ static void vUselessLoad(uint32_t ulTimeUnits) {
 static void prvTask1(void* pvParameters)
 {
 	TickType_t xNextWakeTime;
-	const TickType_t xBlockTime = pcpTasks[PCP_TASK_NUMBER_1].relativeReleaseTime;
+	TickType_t xBlockTime = pcpTasks[PCP_TASK_NUMBER_1].relativeReleaseTime;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
-	/*Delay the task until the block time*/
-	vTaskDelayUntil(&xNextWakeTime, xBlockTime);
+	
+
 	static uint32_t startTimeOfTaskOfTaskA; //get the current tick count once the task is started
 	startTimeOfTaskOfTaskA = xTaskGetTickCount();
-	printf("Task 1 started\n");
+	
 	while (1)
 	{
-		usPrioritySemaphoreWait(&pcpTasks[PCP_TASK_NUMBER_1], startTimeOfTaskOfTaskA);
+		/*Delay the task until the release time on every period*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
+		//printf("Task 1 started\n");
 
-		usPrioritySemaphoreSignal(&pcpTasks[PCP_TASK_NUMBER_1], startTimeOfTaskOfTaskA);
+		/*Accessing the Resource B*/
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_1].resources[PCP_RESOURCE_B].lockingTime);
+		usPrioritySemaphoreWait(&pcpTasks[PCP_TASK_NUMBER_1], PCP_RESOURCE_B);
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_1].resources[PCP_RESOURCE_B].unlockingTime - pcpTasks[PCP_TASK_NUMBER_1].resources[PCP_RESOURCE_B].lockingTime);
+		usPrioritySemaphoreSignal(&pcpTasks[PCP_TASK_NUMBER_1], PCP_RESOURCE_B);
 
-		//Continue to execute the normal task
-		vUselessLoad(1);
+		/*Accessing the Resource C*/
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_1].resources[PCP_RESOURCE_C].lockingTime - pcpTasks[PCP_TASK_NUMBER_1].resources[PCP_RESOURCE_B].unlockingTime);
+		usPrioritySemaphoreWait(&pcpTasks[PCP_TASK_NUMBER_1], PCP_RESOURCE_C);
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_1].resources[PCP_RESOURCE_C].unlockingTime - pcpTasks[PCP_TASK_NUMBER_1].resources[PCP_RESOURCE_C].lockingTime);
+		usPrioritySemaphoreSignal(&pcpTasks[PCP_TASK_NUMBER_1], PCP_RESOURCE_C);
+
+
+		vUselessLoad( pcpTasks[PCP_TASK_NUMBER_1].relativeExecTime - pcpTasks[PCP_TASK_NUMBER_1].resources[PCP_RESOURCE_C].unlockingTime);
+		
+		xBlockTime = pcpTasks[PCP_TASK_NUMBER_1].period;
+		/*Execute the next cycle*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 	}
 
 }
@@ -290,55 +299,86 @@ static void prvTask1(void* pvParameters)
 static void prvTask2(void* pvParameters)
 {
 	TickType_t xNextWakeTime;
-	const TickType_t xBlockTime = pcpTasks[PCP_TASK_NUMBER_2].relativeReleaseTime;
+	TickType_t xBlockTime = pcpTasks[PCP_TASK_NUMBER_2].relativeReleaseTime;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
-	/*Delay the task until the block time*/
-	vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 
 	static uint32_t startTimeOfTaskOfTaskB; //get the current tick count once the task is started
 	startTimeOfTaskOfTaskB = xTaskGetTickCount();
-	printf("Task 2 started\n");
+
 	while (1)
 	{
-		usPrioritySemaphoreWait(&pcpTasks[PCP_TASK_NUMBER_2], startTimeOfTaskOfTaskB);
+		/*Delay the task until the release time on every period*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
+		//printf("Task 2 started\n");
 
-		usPrioritySemaphoreSignal(&pcpTasks[PCP_TASK_NUMBER_2], startTimeOfTaskOfTaskB);
 
-		//Continue to execute the normal task
-		vUselessLoad(1);
+		/*Accessing the Resource C*/
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_2].resources[PCP_RESOURCE_C].lockingTime);
+		usPrioritySemaphoreWait(&pcpTasks[PCP_TASK_NUMBER_2], PCP_RESOURCE_C);
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_2].resources[PCP_RESOURCE_C].unlockingTime - pcpTasks[PCP_TASK_NUMBER_2].resources[PCP_RESOURCE_C].lockingTime);
+		usPrioritySemaphoreSignal(&pcpTasks[PCP_TASK_NUMBER_2], PCP_RESOURCE_C);
+
+		/*Accessing the Resource A*/
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_2].resources[PCP_RESOURCE_A].lockingTime - pcpTasks[PCP_TASK_NUMBER_2].resources[PCP_RESOURCE_C].unlockingTime);
+		usPrioritySemaphoreWait(&pcpTasks[PCP_TASK_NUMBER_2], PCP_RESOURCE_A);
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_2].resources[PCP_RESOURCE_A].unlockingTime - pcpTasks[PCP_TASK_NUMBER_2].resources[PCP_RESOURCE_A].lockingTime);
+		usPrioritySemaphoreSignal(&pcpTasks[PCP_TASK_NUMBER_2], PCP_RESOURCE_A);
+
+
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_2].relativeExecTime - pcpTasks[PCP_TASK_NUMBER_2].resources[PCP_RESOURCE_A].unlockingTime);
+
+		xBlockTime = pcpTasks[PCP_TASK_NUMBER_2].period;
+		/*Execute the next cycle*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 	}
 }
 
 static void prvTask3(void* pvParameters)
 {
 	TickType_t xNextWakeTime;
-	const TickType_t xBlockTime = pcpTasks[PCP_TASK_NUMBER_3].relativeReleaseTime;
+	TickType_t xBlockTime = pcpTasks[PCP_TASK_NUMBER_3].relativeReleaseTime;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
-	/*Delay the task until the block time*/
-	vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 
 	static uint32_t startTimeOfTaskOfTaskC; //get the current tick count once the task is started
 	startTimeOfTaskOfTaskC = xTaskGetTickCount();
-	printf("Task 3 started\n");
+
 	while (1)
 	{
-		usPrioritySemaphoreWait(&pcpTasks[PCP_TASK_NUMBER_3], startTimeOfTaskOfTaskC);
+		/*Delay the task until the release time on every period*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
+		//printf("Task 3 started\n");
 
-		usPrioritySemaphoreSignal(&pcpTasks[PCP_TASK_NUMBER_3], startTimeOfTaskOfTaskC);
 
-		//Continue to execute the normal task
-		vUselessLoad(1);
+		/*Accessing the Resource B & A*/
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_3].resources[PCP_RESOURCE_B].lockingTime);
+		usPrioritySemaphoreWait(&pcpTasks[PCP_TASK_NUMBER_3], PCP_RESOURCE_B);
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_3].resources[PCP_RESOURCE_A].lockingTime - pcpTasks[PCP_TASK_NUMBER_3].resources[PCP_RESOURCE_B].lockingTime);
+		usPrioritySemaphoreWait(&pcpTasks[PCP_TASK_NUMBER_3], PCP_RESOURCE_A);
+
+		/*Releasing the Resource A & B*/
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_3].resources[PCP_RESOURCE_A].unlockingTime - pcpTasks[PCP_TASK_NUMBER_3].resources[PCP_RESOURCE_A].lockingTime);
+		usPrioritySemaphoreSignal(&pcpTasks[PCP_TASK_NUMBER_3], PCP_RESOURCE_A);
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_3].resources[PCP_RESOURCE_B].unlockingTime - pcpTasks[PCP_TASK_NUMBER_3].resources[PCP_RESOURCE_A].unlockingTime);
+		usPrioritySemaphoreSignal(&pcpTasks[PCP_TASK_NUMBER_3], PCP_RESOURCE_B);
+
+
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_3].relativeExecTime - pcpTasks[PCP_TASK_NUMBER_3].resources[PCP_RESOURCE_B].unlockingTime);
+
+		xBlockTime = pcpTasks[PCP_TASK_NUMBER_3].period;
+		/*Execute the next cycle*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
+	
 	}
 }
 
 static void prvTask4(void* pvParameters)
 {
 	TickType_t xNextWakeTime;
-	const TickType_t xBlockTime = pcpTasks[PCP_TASK_NUMBER_4].relativeReleaseTime;
+	TickType_t xBlockTime = pcpTasks[PCP_TASK_NUMBER_4].relativeReleaseTime;
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
@@ -346,299 +386,128 @@ static void prvTask4(void* pvParameters)
 	//no delay required here and will start as soon as its available
 
 	uint32_t startTimeOfTask = xTaskGetTickCount(); //get the current tick count once the task is started
-	printf("Task 4 started\n");
 	while (1)
 	{
-		usPrioritySemaphoreWait(&pcpTasks[PCP_TASK_NUMBER_4], startTimeOfTask);
+		//printf("Task 4 started\n");
 
-		usPrioritySemaphoreSignal(&pcpTasks[PCP_TASK_NUMBER_4], startTimeOfTask);
+		/*Accessing the Resource B & A*/
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_4].resources[PCP_RESOURCE_A].lockingTime);
+		usPrioritySemaphoreWait(&pcpTasks[PCP_TASK_NUMBER_4], PCP_RESOURCE_A);
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_4].resources[PCP_RESOURCE_B].lockingTime - pcpTasks[PCP_TASK_NUMBER_4].resources[PCP_RESOURCE_A].lockingTime);
+		usPrioritySemaphoreWait(&pcpTasks[PCP_TASK_NUMBER_4], PCP_RESOURCE_B);
 
-		//Continue to execute the normal task
-		vUselessLoad(1);
+		/*Releasing the Resource A & B*/
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_4].resources[PCP_RESOURCE_B].unlockingTime - pcpTasks[PCP_TASK_NUMBER_4].resources[PCP_RESOURCE_B].lockingTime);
+		usPrioritySemaphoreSignal(&pcpTasks[PCP_TASK_NUMBER_4], PCP_RESOURCE_B);
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_4].resources[PCP_RESOURCE_A].unlockingTime - pcpTasks[PCP_TASK_NUMBER_4].resources[PCP_RESOURCE_B].unlockingTime);
+		usPrioritySemaphoreSignal(&pcpTasks[PCP_TASK_NUMBER_4], PCP_RESOURCE_A);
+
+
+		vUselessLoad(pcpTasks[PCP_TASK_NUMBER_4].relativeExecTime - pcpTasks[PCP_TASK_NUMBER_4].resources[PCP_RESOURCE_A].unlockingTime);
+
+		xBlockTime = pcpTasks[PCP_TASK_NUMBER_4].period;
+		/*Execute the next cycle*/
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 	}
 }
 
 
 //Wrapper for take() function of semaphore
-void usPrioritySemaphoreWait(s_pcpTasks* pcpTask, uint32_t startTimeOfTask)
+void usPrioritySemaphoreWait(s_pcpTasks* pcpTask, e_pcpResource pcpResource)
 {
-	//For Resource A
-	usPrioritySemaphoreSignalResourceHandlerA(pcpTask, startTimeOfTask);
+	uint32_t startTimeOfTask = pcpTask->relativeReleaseTime;
 
-	//For Resource B
-	usPrioritySemaphoreSignalResourceHandlerB(pcpTask, startTimeOfTask);
+	if (pcpTask != NULL)
+	{
+		//In ticks
+		uint32_t currentRelativeTime = (xTaskGetTickCount() - startTimeOfTask);
 
 
-	//For Resource C
-	usPrioritySemaphoreSignalResourceHandlerC(pcpTask, startTimeOfTask);
+		//Check if the task is supposed to access this resource or not
+		if (pcpTask->resources[pcpResource].lockingTime != NULL &&
+			pcpTask->resources[pcpResource].unlockingTime != NULL)
+		{
+			//Checking its time to access the given resource
+			//if (currentRelativeTime >= (pcpTask->resources[pcpResource].lockingTime - TICKS_DEVIATION_MARGIN) && \
+			//	currentRelativeTime < (pcpTask->resources[pcpResource].lockingTime + TICKS_DEVIATION_MARGIN)
+
+				//Checking if the task does not have already accessed the resource already
+				if (xSemaphoreGetMutexHolder(semaphoreData[pcpResource].semaphoreHandle) != pcpTask->taskHandle)
+			{
+				/* See if we can obtain the semaphore.  If the semaphore is not
+				available wait 5 ticks to see if it becomes free. */
+				if (xSemaphoreTake(semaphoreData[pcpResource].semaphoreHandle, (TickType_t)5) == pdTRUE)
+				{
+					//Once we access the semaphore, we will update the priority of the existing task to the ceiling function priority of the resource
+
+					if (pcpTask->resources[pcpResource].ceilingPriority > (uint32_t)pcpTask->priority)
+					{
+						vTaskPrioritySet(pcpTask->taskHandle, pcpTask->resources[pcpResource].ceilingPriority);
+
+						printf("Task %d acquired resource %d and changed its priority from %d to %d.\n",
+							pcpTask->taskNb + 1, pcpResource + 1, pcpTask->priority, pcpTask->resources[pcpResource].ceilingPriority);
+
+					}
+					else
+					{
+						printf("Task %d acquired resource %d and its priority is not changed & remains as %d.\n",
+							pcpTask->taskNb + 1, pcpResource + 1, pcpTask->priority);
+					}
+
+				}
+				else
+				{
+					printf("Task %d could NOT acquire resource %d with priority of %d\n",
+						pcpTask->taskNb + 1, pcpResource + 1, pcpTask->priority);
+				}
+			}
+		}
+	}
 
 }
 
 
 //Wrapper for give() function of semaphore
-void usPrioritySemaphoreSignal(s_pcpTasks* pcpTask, uint32_t startTimeOfTask)
+void usPrioritySemaphoreSignal(s_pcpTasks* pcpTask, e_pcpResource pcpResource)
 {
+	uint32_t startTimeOfTask = pcpTask->relativeReleaseTime;
 
-	//For Resource A
-	usPrioritySemaphoreSignalHandlerA(pcpTask, startTimeOfTask);
-
-	//For Resource B
-	usPrioritySemaphoreSignalHandlerB(pcpTask, startTimeOfTask);
-
-	//For Resource C
-	usPrioritySemaphoreSignalHandlerC(pcpTask, startTimeOfTask);
-
-
-}
-
-
-inline void usPrioritySemaphoreSignalResourceHandlerA(s_pcpTasks* pcpTask, uint32_t startTimeOfTask)
-{
-	//In ticks
-	uint32_t currentRelativeTime = (xTaskGetTickCount() - startTimeOfTask);
-	//Check if the task is supposed to access this resource or not
-	if (pcpTask->resources[PCP_RESOURCE_A].lockingTime != NULL &&
-		pcpTask->resources[PCP_RESOURCE_A].unlockingTime != NULL)
+	if (pcpTask != NULL)
 	{
-		if (currentRelativeTime >= (pcpTask->resources[PCP_RESOURCE_A].lockingTime - TICKS_DEVIATION_MARGIN) && \
-			currentRelativeTime < (pcpTask->resources[PCP_RESOURCE_A].lockingTime + TICKS_DEVIATION_MARGIN)
-			&& xSemaphoreGetMutexHolder(semaphoreResourceA) != pcpTask->taskHandle)
+
+		//Check if the task is supposed to access this resource or not
+		if (pcpTask->resources[pcpResource].unlockingTime != NULL &&
+			pcpTask->resources[pcpResource].unlockingTime != NULL)
 		{
-			/* See if we can obtain the semaphore.  If the semaphore is not
-			available wait 5 ticks to see if it becomes free. */
-			if (xSemaphoreTake(semaphoreResourceA, (TickType_t)1) == pdTRUE)
+		//	if (currentRelativeTime >= (pcpTask->resources[PCP_RESOURCE_A].unlockingTime - 10) && \
+		//		currentRelativeTime < (pcpTask->resources[PCP_RESOURCE_A].unlockingTime + 10)
+
+				//Check if the task is currently accessing the Resource and only then it will release
+				if( xSemaphoreGetMutexHolder(semaphoreData[pcpResource].semaphoreHandle) == pcpTask->taskHandle)
 			{
-				//Once we access the semaphore, we will update the priority of the existing task to the ceiling function priority of the resource
-				//vTaskPrioritySet(pcpTask->taskHandle, pcpTask->resources[PCP_RESOURCE_A].ceilingPriority);
+				/* See if we can obtain the semaphore.  If the semaphore is not
+				available wait 5 ticks to see if it becomes free. */
 
-				printf("Task %d acquired resource %d and changed its priority from %d to %d.\n",
-					pcpTask->taskNb + 1, PCP_RESOURCE_A + 1, pcpTask->priority, pcpTask->resources[PCP_RESOURCE_A].ceilingPriority);
+				taskENTER_CRITICAL();
+				if (xSemaphoreGive(semaphoreData[pcpResource].semaphoreHandle) == pdTRUE)
+				{
+					//Once we access the semaphore, we will update the priority of the existing task to its original priority
+					vTaskPrioritySet(pcpTask->taskHandle, pcpTask->priority);
 
-				//Send the value in terms of ticks
-				accessSharedResourceA(pcpTask, (pcpTask->resources[PCP_RESOURCE_A].unlockingTime - pcpTask->resources[PCP_RESOURCE_A].lockingTime));
+					printf("Task %d released resource %d and changed its original priority from %d to %d.\n",
+						pcpTask->taskNb + 1, pcpResource + 1, pcpTask->resources[pcpResource].ceilingPriority, pcpTask->priority);
 
-			}
-			else
-			{
-				printf("Task %d could NOT acquire resource %d with priority of %d\n",
-					pcpTask->taskNb + 1, PCP_RESOURCE_A + 1, pcpTask->priority);
-			}
-		}
-	}
-	
-}
-inline void usPrioritySemaphoreSignalResourceHandlerB(s_pcpTasks* pcpTask, uint32_t startTimeOfTask)
-{
-	//In ticks
-	uint32_t currentRelativeTime = (xTaskGetTickCount() - startTimeOfTask);
+				}
+				else
+				{
+					printf("Task %d could NOT release resource %d with priority %d.\n",
+						pcpTask->taskNb + 1, pcpResource + 1, pcpTask->priority);
+				}
 
-	//Check if the task is supposed to access this resource or not
-	if (pcpTask->resources[PCP_RESOURCE_B].lockingTime != NULL &&
-		pcpTask->resources[PCP_RESOURCE_B].unlockingTime != NULL)
-	{
-		if (currentRelativeTime >= (pcpTask->resources[PCP_RESOURCE_B].lockingTime - TICKS_DEVIATION_MARGIN) && \
-			currentRelativeTime < (pcpTask->resources[PCP_RESOURCE_B].lockingTime + TICKS_DEVIATION_MARGIN)
-			&& xSemaphoreGetMutexHolder(semaphoreResourceB) != pcpTask->taskHandle)
-		{
-			/* See if we can obtain the semaphore.  If the semaphore is not
-			available wait 5 ticks to see if it becomes free. */
-			if (xSemaphoreTake(semaphoreResourceB, (TickType_t)1) == pdTRUE)
-			{
-				//Once we access the semaphore, we will update the priority of the existing task to the ceiling function priority of the resource
-				//vTaskPrioritySet(pcpTask->taskHandle, pcpTask->resources[PCP_RESOURCE_B].ceilingPriority);
-
-				printf("Task %d acquired resource %d and changed its priority from %d to %d.\n",
-					pcpTask->taskNb + 1, PCP_RESOURCE_B + 1, pcpTask->priority, pcpTask->resources[PCP_RESOURCE_B].ceilingPriority);
-
-				//Send the value in terms of ticks
-				accessSharedResourceB(pcpTask, (pcpTask->resources[PCP_RESOURCE_B].unlockingTime - pcpTask->resources[PCP_RESOURCE_B].lockingTime));
-
-			}
-			else
-			{
-				printf("Task %d could NOT acquire resource %d with priority of %d\n",
-					pcpTask->taskNb + 1, PCP_RESOURCE_B + 1, pcpTask->priority);
+				taskEXIT_CRITICAL();
 			}
 		}
 	}
 
-}
-
-inline void usPrioritySemaphoreSignalResourceHandlerC(s_pcpTasks* pcpTask, uint32_t startTimeOfTask)
-{
-	//In ticks
-	uint32_t currentRelativeTime = (xTaskGetTickCount() - startTimeOfTask);
-
-	//Check if the task is supposed to access this resource or not
-	if (pcpTask->resources[PCP_RESOURCE_C].lockingTime != NULL &&
-		pcpTask->resources[PCP_RESOURCE_C].unlockingTime != NULL)
-	{
-		if (currentRelativeTime >= (pcpTask->resources[PCP_RESOURCE_C].lockingTime - TICKS_DEVIATION_MARGIN) && \
-			currentRelativeTime < (pcpTask->resources[PCP_RESOURCE_C].lockingTime + TICKS_DEVIATION_MARGIN)
-			&& xSemaphoreGetMutexHolder(semaphoreResourceC) != pcpTask->taskHandle)
-		{
-			/* See if we can obtain the semaphore.  If the semaphore is not
-			available wait 5 ticks to see if it becomes free. */
-			if (xSemaphoreTake(semaphoreResourceC, (TickType_t)1) == pdTRUE)
-			{
-				//Once we access the semaphore, we will update the priority of the existing task to the ceiling function priority of the resource
-				//vTaskPrioritySet(pcpTask->taskHandle, pcpTask->resources[PCP_RESOURCE_C].ceilingPriority);
-
-				printf("Task %d acquired resource %d and changed its priority from %d to %d.\n",
-					pcpTask->taskNb + 1, PCP_RESOURCE_C + 1, pcpTask->priority, pcpTask->resources[PCP_RESOURCE_C].ceilingPriority);
-
-				//Send the value in terms of ticks
-				accessSharedResourceC(pcpTask, (pcpTask->resources[PCP_RESOURCE_C].unlockingTime - pcpTask->resources[PCP_RESOURCE_C].lockingTime));
-
-			}
-			else
-			{
-				printf("Task %d could NOT acquire resource %d with priority of %d\n",
-					pcpTask->taskNb + 1, PCP_RESOURCE_C + 1, pcpTask->priority);
-			}
-		}
-	}
-}
-
-
-inline void usPrioritySemaphoreSignalHandlerA(s_pcpTasks* pcpTask, uint32_t startTimeOfTask)
-{
-	//In ticks
-	uint32_t currentRelativeTime = (xTaskGetTickCount() - startTimeOfTask);
-
-	//Check if the task is supposed to access this resource or not
-	if (pcpTask->resources[PCP_RESOURCE_A].unlockingTime != NULL &&
-		pcpTask->resources[PCP_RESOURCE_A].unlockingTime != NULL)
-	{
-		if (currentRelativeTime >= (pcpTask->resources[PCP_RESOURCE_A].unlockingTime - 10) && \
-			currentRelativeTime < (pcpTask->resources[PCP_RESOURCE_A].unlockingTime + 10)
-			&& xSemaphoreGetMutexHolder(semaphoreResourceA) == pcpTask->taskHandle)
-		{
-			/* See if we can obtain the semaphore.  If the semaphore is not
-			available wait 5 ticks to see if it becomes free. */
-			if (xSemaphoreGive(semaphoreResourceA, (TickType_t)1) == pdTRUE)
-			{
-				//Once we access the semaphore, we will update the priority of the existing task to the ceiling function priority of the resource
-				//vTaskPrioritySet(pcpTask->taskHandle, pcpTask->priority);
-
-				printf("Task %d released resource %d and changed its priority from %d to %d.\n",
-					pcpTask->taskNb + 1, PCP_RESOURCE_A + 1, pcpTask->resources[PCP_RESOURCE_A].ceilingPriority, pcpTask->priority);
-
-			}
-			else
-			{
-				printf("Task %d could NOT release resource %d with priority %d.\n",
-					pcpTask->taskNb + 1, PCP_RESOURCE_A + 1, pcpTask->priority);
-			}
-		}
-	}
-}
-
-inline void usPrioritySemaphoreSignalHandlerB(s_pcpTasks* pcpTask, uint32_t startTimeOfTask)
-{
-	//In ticks
-	uint32_t currentRelativeTime = (xTaskGetTickCount() - startTimeOfTask);
-
-	//Check if the task is supposed to access this resource or not
-	if (pcpTask->resources[PCP_RESOURCE_B].unlockingTime != NULL &&
-		pcpTask->resources[PCP_RESOURCE_B].unlockingTime != NULL)
-	{
-		if (currentRelativeTime >= (pcpTask->resources[PCP_RESOURCE_B].unlockingTime - 10) && \
-			currentRelativeTime < (pcpTask->resources[PCP_RESOURCE_B].unlockingTime + 10)
-			&& xSemaphoreGetMutexHolder(semaphoreResourceB) == pcpTask->taskHandle)
-		{
-			/* See if we can obtain the semaphore.  If the semaphore is not
-			available wait 5 ticks to see if it becomes free. */
-			if (xSemaphoreGive(semaphoreResourceB, (TickType_t)1) == pdTRUE)
-			{
-				//Once we access the semaphore, we will update the priority of the existing task to the ceiling function priority of the resource
-				//vTaskPrioritySet(pcpTask->taskHandle, pcpTask->priority);
-
-				printf("Task %d released resource %d and changed its priority from %d to %d.\n",
-					pcpTask->taskNb + 1, PCP_RESOURCE_B + 1, pcpTask->resources[PCP_RESOURCE_B].ceilingPriority, pcpTask->priority);
-
-			}
-			else
-			{
-				printf("Task %d could NOT release resource %d with priority %d.\n",
-					pcpTask->taskNb + 1, PCP_RESOURCE_B + 1, pcpTask->priority);
-			}
-		}
-	}
-}
-
-
-inline void usPrioritySemaphoreSignalHandlerC(s_pcpTasks* pcpTask, uint32_t startTimeOfTask)
-{
-	//In ticks
-	uint32_t currentRelativeTime = (xTaskGetTickCount() - startTimeOfTask);
-
-	//Check if the task is supposed to access this resource or not
-	if (pcpTask->resources[PCP_RESOURCE_C].unlockingTime != NULL &&
-		pcpTask->resources[PCP_RESOURCE_C].unlockingTime != NULL)
-	{
-		if (currentRelativeTime >= (pcpTask->resources[PCP_RESOURCE_C].unlockingTime - 10) && \
-			currentRelativeTime < (pcpTask->resources[PCP_RESOURCE_C].unlockingTime + 10)
-			&& xSemaphoreGetMutexHolder(semaphoreResourceC) == pcpTask->taskHandle)
-		{
-			/* See if we can obtain the semaphore.  If the semaphore is not
-			available wait 5 ticks to see if it becomes free. */
-			if (xSemaphoreGive(semaphoreResourceC, (TickType_t)5) == pdTRUE)
-			{
-				//Once we access the semaphore, we will update the priority of the existing task to the ceiling function priority of the resource
-				//vTaskPrioritySet(pcpTask->taskHandle, pcpTask->priority);
-
-				printf("Task %d released resource %d and changed its priority from %d to %d.\n",
-					pcpTask->taskNb + 1, PCP_RESOURCE_C + 1, pcpTask->resources[PCP_RESOURCE_C].ceilingPriority, pcpTask->priority);
-
-			}
-			else
-			{
-				printf("Task %d could NOT release resource %d with priority %d.\n",
-					pcpTask->taskNb + 1, PCP_RESOURCE_C + 1, pcpTask->priority);
-			}
-		}
-	}
-}
-
-
-static void accessSharedResourceA(s_pcpTasks* pcpTask, uint32_t ulTimeUnits)
-{
-	//Accessing the shared Resource A
-	printf("Shared Resource being accessed by Task %d\n", pcpTask->taskNb + 1);
-	uint32_t ulUselessVariable = 0;
-	uint32_t currentTick = xTaskGetTickCount();
-	while ((xTaskGetTickCount() - currentTick) < ulTimeUnits)
-	{
-		ulUselessVariable++;
-	}
 
 }
-
-static void accessSharedResourceB(s_pcpTasks* pcpTask, uint32_t ulTimeUnits)
-{
-	//Accessing the shared Resource A
-	printf("Shared Resource being accessed by Task %d\n", pcpTask->taskNb + 1);
-	uint32_t ulUselessVariable = 0;
-	uint32_t currentTick = xTaskGetTickCount();
-	while ((xTaskGetTickCount() - currentTick) < ulTimeUnits)
-	{
-		ulUselessVariable++;
-	}
-
-}
-
-
-static void accessSharedResourceC(s_pcpTasks* pcpTask, uint32_t ulTimeUnits)
-{
-	//Accessing the shared Resource A
-	printf("Shared Resource being accessed by Task %d\n", pcpTask->taskNb + 1);
-	uint32_t ulUselessVariable = 0;
-	uint32_t currentTick = xTaskGetTickCount();
-	while ((xTaskGetTickCount() - currentTick) < ulTimeUnits)
-	{
-		ulUselessVariable++;
-	}
-
-}
-
