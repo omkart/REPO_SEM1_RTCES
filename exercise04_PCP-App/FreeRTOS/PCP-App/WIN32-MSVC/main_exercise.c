@@ -52,7 +52,7 @@
 #include "semphr.h"
 
 #define PCP_TASKS_MAX					4U
-#define PCP_TASK_PERIOD					pdMS_TO_TICKS( 2000UL )		// 10s
+#define PCP_TASK_PERIOD					pdMS_TO_TICKS( 20000UL )		// 10s
 
 #define TIME_UNIT_TO_MS_RES						100	//Resolution of 100ms 
 #define mainNUMBER_OF_SEMAPHORS					( 3 )
@@ -131,6 +131,7 @@ typedef struct
 	u_resource resources[mainNUMBER_OF_SEMAPHORS];
 	e_pcpTaskNumber taskNb;
 	TaskHandle_t taskHandle;
+
 }s_pcpTasks;
 
 s_semaphoreData semaphoreData[mainNUMBER_OF_SEMAPHORS];
@@ -429,36 +430,39 @@ void usPrioritySemaphoreWait(s_pcpTasks* pcpTask, e_pcpResource pcpResource)
 		{
 			//Checking its time to access the given resource
 			//if (currentRelativeTime >= (pcpTask->resources[pcpResource].lockingTime - TICKS_DEVIATION_MARGIN) && \
-			//	currentRelativeTime < (pcpTask->resources[pcpResource].lockingTime + TICKS_DEVIATION_MARGIN)
+			//	currentRelativeTime < (pcpTask->resources[pcpResource].lockingTime + TICKS_DEVIATION_MARGIN) && \
 
 				//Checking if the task does not have already accessed the resource already
-				if (xSemaphoreGetMutexHolder(semaphoreData[pcpResource].semaphoreHandle) != pcpTask->taskHandle)
+			if(xSemaphoreGetMutexHolder(semaphoreData[pcpResource].semaphoreHandle) != pcpTask->taskHandle)
 			{
 				/* See if we can obtain the semaphore.  If the semaphore is not
 				available wait 5 ticks to see if it becomes free. */
+				uint32_t currentTaskPriority = uxTaskPriorityGet(pcpTask->taskHandle);
 				if (xSemaphoreTake(semaphoreData[pcpResource].semaphoreHandle, (TickType_t)5) == pdTRUE)
 				{
 					//Once we access the semaphore, we will update the priority of the existing task to the ceiling function priority of the resource
-
-					if (pcpTask->resources[pcpResource].ceilingPriority > (uint32_t)pcpTask->priority)
+					
+					if (pcpTask->resources[pcpResource].ceilingPriority > currentTaskPriority)
 					{
 						vTaskPrioritySet(pcpTask->taskHandle, pcpTask->resources[pcpResource].ceilingPriority);
 
 						printf("Task %d acquired resource %d and changed its priority from %d to %d.\n",
-							pcpTask->taskNb + 1, pcpResource + 1, pcpTask->priority, pcpTask->resources[pcpResource].ceilingPriority);
+							pcpTask->taskNb + 1, pcpResource + 1, currentTaskPriority, pcpTask->resources[pcpResource].ceilingPriority);
 
 					}
 					else
 					{
+						/*Retain the priority of the task and store it*/
+						pcpTask->priority = currentTaskPriority;
 						printf("Task %d acquired resource %d and its priority is not changed & remains as %d.\n",
-							pcpTask->taskNb + 1, pcpResource + 1, pcpTask->priority);
+							pcpTask->taskNb + 1, pcpResource + 1, currentTaskPriority);
 					}
 
 				}
 				else
 				{
 					printf("Task %d could NOT acquire resource %d with priority of %d\n",
-						pcpTask->taskNb + 1, pcpResource + 1, pcpTask->priority);
+						pcpTask->taskNb + 1, pcpResource + 1, currentTaskPriority);
 				}
 			}
 		}
@@ -474,34 +478,33 @@ void usPrioritySemaphoreSignal(s_pcpTasks* pcpTask, e_pcpResource pcpResource)
 
 	if (pcpTask != NULL)
 	{
+		//In ticks
+		uint32_t currentRelativeTime = (xTaskGetTickCount() - startTimeOfTask);
 
 		//Check if the task is supposed to access this resource or not
 		if (pcpTask->resources[pcpResource].unlockingTime != NULL &&
 			pcpTask->resources[pcpResource].unlockingTime != NULL)
 		{
-		//	if (currentRelativeTime >= (pcpTask->resources[PCP_RESOURCE_A].unlockingTime - 10) && \
-		//		currentRelativeTime < (pcpTask->resources[PCP_RESOURCE_A].unlockingTime + 10)
+			//if (currentRelativeTime >= (pcpTask->resources[PCP_RESOURCE_A].unlockingTime - TICKS_DEVIATION_MARGIN) && \
+				//currentRelativeTime < (pcpTask->resources[PCP_RESOURCE_A].unlockingTime + TICKS_DEVIATION_MARGIN) &&
 
 				//Check if the task is currently accessing the Resource and only then it will release
-				if( xSemaphoreGetMutexHolder(semaphoreData[pcpResource].semaphoreHandle) == pcpTask->taskHandle)
-			{
-				/* See if we can obtain the semaphore.  If the semaphore is not
-				available wait 5 ticks to see if it becomes free. */
-
+				if(xSemaphoreGetMutexHolder(semaphoreData[pcpResource].semaphoreHandle) == pcpTask->taskHandle)
+				{
 				taskENTER_CRITICAL();
 				if (xSemaphoreGive(semaphoreData[pcpResource].semaphoreHandle) == pdTRUE)
 				{
-					//Once we access the semaphore, we will update the priority of the existing task to its original priority
+					//Once we access the semaphore, we will restore the priority of the existing task
 					vTaskPrioritySet(pcpTask->taskHandle, pcpTask->priority);
 
-					printf("Task %d released resource %d and changed its original priority from %d to %d.\n",
+					printf("Task %d released resource %d and changed its priority from %d to %d.\n",
 						pcpTask->taskNb + 1, pcpResource + 1, pcpTask->resources[pcpResource].ceilingPriority, pcpTask->priority);
 
 				}
 				else
 				{
 					printf("Task %d could NOT release resource %d with priority %d.\n",
-						pcpTask->taskNb + 1, pcpResource + 1, pcpTask->priority);
+						pcpTask->taskNb + 1, pcpResource + 1, uxTaskPriorityGet(pcpTask->taskHandle));
 				}
 
 				taskEXIT_CRITICAL();
